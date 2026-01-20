@@ -1,8 +1,11 @@
 {
   "name": "obs-todo-list",
   "version": "1.0.0",
-  "description": "OBS Todo List Hosted",
+  "description": "OBS Todo List",
   "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node server.js"
   },

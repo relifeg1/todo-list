@@ -45,8 +45,8 @@
 </div>
 
 <script>
-    // الرابط الخاص بك (تم تعديله لصيغة API)
-    const API_URL = "https://jsonblob.com/api/jsonBlob/019bdbe5-a54f-705f-a70a-0e7e478b35ef";
+    // التعديل الجديد: الرابط أصبح داخلياً لتجنب مشاكل الحماية
+    const API_URL = "/api/data";
     
     let tasks = [];
 
@@ -61,7 +61,7 @@
             document.getElementById('statusMsg').style.color = "#4CAF50";
         } catch(e) { 
             console.error(e);
-            document.getElementById('statusMsg').innerText = "خطأ في التحميل! تأكد من الإنترنت";
+            document.getElementById('statusMsg').innerText = "خطأ في التحميل! تأكد من تشغيل السيرفر";
             document.getElementById('statusMsg').style.color = "#f44336";
         }
     }
@@ -111,7 +111,7 @@
         syncData();
     }
 
-    // الحفظ في الموقع
+    // الحفظ عن طريق السيرفر
     async function syncData() {
         const status = document.getElementById('statusMsg');
         status.innerText = "جاري الحفظ...";
