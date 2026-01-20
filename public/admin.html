@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحكم Todo List</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #e0e0e0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 500px; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: #fff; margin-bottom: 20px; }
+        
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input[type="text"] { flex-grow: 1; padding: 12px; border-radius: 6px; border: 1px solid #333; background: #2c2c2c; color: white; font-size: 16px; outline: none; transition: border 0.3s; }
+        input[type="text"]:focus { border-color: #4CAF50; }
+        
+        button#addBtn { padding: 12px 20px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.3s; }
+        button#addBtn:hover { background: #45a049; }
+
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { background: #2c2c2c; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; transition: all 0.2s; border-right: 4px solid transparent; }
+        li:hover { transform: translateX(-5px); }
+        li.done { text-decoration: line-through; opacity: 0.5; border-right: 4px solid #4CAF50; }
+        
+        .actions { display: flex; gap: 8px; }
+        .btn-action { border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
+        .btn-action:hover { opacity: 0.8; }
+        .check-btn { background: #2196F3; color: white; }
+        .delete-btn { background: #f44336; color: white; }
+
+        .status { margin-top: 15px; text-align: center; font-size: 0.9em; color: #888; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>لوحة التحكم (Admin)</h2>
+    
+    <div class="input-group">
+        <input type="text" id="newTask" placeholder="اكتب الهدف هنا..." onkeypress="handleEnter(event)">
+        <button id="addBtn" onclick="addTask()">إضافة</button>
+    </div>
+
+    <ul id="taskList"></ul>
+    <div id="statusMsg" class="status">جاري الاتصال...</div>
+</div>
+
+<script>
+    // الرابط الخاص بك (تم تعديله لصيغة API)
+    const API_URL = "https://jsonblob.com/api/jsonBlob/019bdbe5-a54f-705f-a70a-0e7e478b35ef";
+    
+    let tasks = [];
+
+    // تحميل البيانات عند الفتح
+    async function loadData() {
+        try {
+            const res = await fetch(API_URL);
+            tasks = await res.json();
+            if (!Array.isArray(tasks)) tasks = [];
+            render();
+            document.getElementById('statusMsg').innerText = "تم التحميل: القائمة جاهزة";
+            document.getElementById('statusMsg').style.color = "#4CAF50";
+        } catch(e) { 
+            console.error(e);
+            document.getElementById('statusMsg').innerText = "خطأ في التحميل! تأكد من الإنترنت";
+            document.getElementById('statusMsg').style.color = "#f44336";
+        }
+    }
+
+    // رسم القائمة في الصفحة
+    function render() {
+        const list = document.getElementById('taskList');
+        list.innerHTML = "";
+        tasks.forEach((task, index) => {
+            const li = document.createElement('li');
+            li.className = task.done ? 'done' : '';
+            li.innerHTML = `
+                <span style="font-size:18px;">${task.text}</span>
+                <div class="actions">
+                    <button class="btn-action check-btn" onclick="toggleTask(${index})">✔</button>
+                    <button class="btn-action delete-btn" onclick="deleteTask(${index})">🗑️</button>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    function addTask() {
+        const input = document.getElementById('newTask');
+        if (!input.value.trim()) return;
+        tasks.push({ text: input.value, done: false, id: Date.now() });
+        input.value = "";
+        render();
+        syncData();
+    }
+
+    function handleEnter(e) {
+        if (e.key === 'Enter') addTask();
+    }
+
+    function deleteTask(index) {
+        if(confirm('هل أنت متأكد من حذف هذا الهدف؟')) {
+            tasks.splice(index, 1);
+            render();
+            syncData();
+        }
+    }
+
+    function toggleTask(index) {
+        tasks[index].done = !tasks[index].done;
+        render();
+        syncData();
+    }
+
+    // الحفظ في الموقع
+    async function syncData() {
+        const status = document.getElementById('statusMsg');
+        status.innerText = "جاري الحفظ...";
+        status.style.color = "#FFC107";
+        
+        try {
+            await fetch(API_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(tasks)
+            });
+            status.innerText = "تم التحديث في البث!";
+            status.style.color = "#4CAF50";
+        } catch(e) {
+            status.innerText = "فشل الحفظ!";
+            status.style.color = "#f44336";
+        }
+    }
+
+    loadData();
+</script>
+</body>
+</html>

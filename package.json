@@ -1,0 +1,12 @@
+{
+  "name": "obs-todo-list",
+  "version": "1.0.0",
+  "description": "OBS Todo List Hosted",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>OBS Overlay</title>
+    <style>
+        /* إعدادات الصفحة الشفافة */
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; padding: 20px; 
+            background-color: transparent; 
+            overflow: hidden; 
+        }
+
+        .todo-container {
+            width: 350px; /* عرض القائمة في البث */
+            background: rgba(18, 18, 18, 0.85); /* خلفية داكنة نصف شفافة */
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            border-right: 6px solid #4CAF50; /* خط أخضر جمالي يمين القائمة */
+            backdrop-filter: blur(5px); /* تأثير ضبابي للخلفية */
+        }
+
+        h2 { 
+            margin: 0 0 15px 0; 
+            color: #fff; 
+            font-size: 22px; 
+            font-weight: 800;
+            text-transform: uppercase; 
+            border-bottom: 2px solid #333; 
+            padding-bottom: 10px; 
+            text-align: right;
+            letter-spacing: 1px;
+        }
+
+        ul { list-style: none; padding: 0; margin: 0; }
+        
+        li {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* حركة ناعمة */
+            border: 1px solid transparent;
+        }
+
+        /* --- حالات الأنميشن --- */
+
+        /* 1. حالة الانتهاء */
+        li.done {
+            background: rgba(76, 175, 80, 0.1);
+            text-decoration: line-through;
+            color: #888;
+            border-color: #4CAF50;
+            opacity: 0.8;
+            transform: scale(0.98);
+        }
+
+        /* علامة الصح */
+        li.done::after {
+            content: '✔';
+            color: #4CAF50;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        /* 2. أنميشن لحظة الانتهاء (وميض) */
+        @keyframes flash-success {
+            0% { background-color: #fff; color: #000; transform: scale(1.1); }
+            50% { background-color: #4CAF50; color: #fff; transform: scale(1.05); }
+            100% { background-color: rgba(76, 175, 80, 0.1); color: #888; transform: scale(0.98); }
+        }
+
+        .just-completed {
+            animation: flash-success 0.8s ease-out forwards;
+        }
+
+        /* 3. أنميشن عند إضافة عنصر جديد */
+        @keyframes slide-in {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .new-task-anim {
+            animation: slide-in 0.4s ease-out forwards;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="todo-container">
+    <h2>🎯 المهام الحالية</h2>
+    <ul id="list"></ul>
+</div>
+
+<script>
+    // رابط الـ API الخاص بك
+    const API_URL = "https://jsonblob.com/api/jsonBlob/019bdbe5-a54f-705f-a70a-0e7e478b35ef";
+    
+    let currentTasks = [];
+
+    // دالة جلب البيانات
+    async function fetchData() {
+        try {
+            const res = await fetch(API_URL);
+            const newTasks = await res.json();
+            if(Array.isArray(newTasks)) {
+                updateList(newTasks);
+            }
+        } catch(e) { console.error("Error fetching data:", e); }
+    }
+
+    // دالة تحديث القائمة والأنميشن
+    function updateList(newTasks) {
+        const list = document.getElementById('list');
+        
+        // التحقق من المهام الجديدة والتغييرات
+        newTasks.forEach(newTask => {
+            const oldTask = currentTasks.find(t => t.id === newTask.id);
+            let el = document.getElementById(`task-${newTask.id}`);
+            
+            // 1. إذا المهمة غير موجودة، أنشئها
+            if (!el) {
+                el = document.createElement('li');
+                el.id = `task-${newTask.id}`;
+                el.innerText = newTask.text;
+                el.classList.add('new-task-anim'); // أنميشن الدخول
+                list.appendChild(el);
+            } else {
+                // تحديث النص لو تغير
+                if(el.childNodes[0].nodeValue !== newTask.text) {
+                     el.innerText = newTask.text; 
+                }
+            }
+
+            // 2. معالجة حالة الانتهاء والأنميشن
+            if (newTask.done) {
+                // إذا كانت المهمة غير منتهية سابقاً وأصبحت منتهية الآن
+                if (!oldTask || !oldTask.done) {
+                    el.classList.add('just-completed');
+                    setTimeout(() => el.classList.remove('just-completed'), 1000);
+                }
+                // ضمان وجود كلاس done
+                el.classList.add('done');
+            } else {
+                el.classList.remove('done');
+            }
+        });
+
+        // 3. حذف المهام التي تم مسحها من الأدمن
+        currentTasks.forEach(oldTask => {
+            if (!newTasks.find(t => t.id === oldTask.id)) {
+                const el = document.getElementById(`task-${oldTask.id}`);
+                if(el) {
+                    el.style.opacity = '0'; // إخفاء تدريجي
+                    setTimeout(() => el.remove(), 400);
+                }
+            }
+        });
+
+        currentTasks = newTasks;
+    }
+
+    // التحديث التلقائي كل ثانيتين
+    setInterval(fetchData, 2000);
+    
+    // تشغيل فوري عند الفتح
+    fetchData();
+</script>
+
+</body>
+</html>
