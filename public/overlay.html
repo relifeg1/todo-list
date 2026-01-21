@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>HUD Overlay AR - Auto Hide</title>
+    <title>HUD Overlay Auto-Hide</title>
     <link href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700;800&display=swap" rel="stylesheet">
     
     <style>
@@ -14,21 +14,21 @@
             color: white;
             display: flex;
             flex-direction: column;
-            align-items: flex-start; 
+            align-items: flex-start;
         }
 
         .hud-wrapper {
             width: 450px;
             border-right: 3px solid rgba(255, 255, 255, 0.15);
-            padding-right: 20px;
+            padding-right: 20px; 
             
-            /* --- إعدادات الإخفاء --- */
+            /* --- إعدادات الإخفاء والمؤقت --- */
             opacity: 0; /* مخفي افتراضياً */
-            transform: translateX(20px); /* إزاحة بسيطة */
-            transition: all 1s cubic-bezier(0.23, 1, 0.32, 1); /* حركة ناعمة جداً */
+            transform: translateX(30px); /* إزاحة لليمين قليلاً */
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1); /* حركة ظهور ناعمة */
         }
 
-        /* كلاس الظهور */
+        /* كلاس الظهور (يتم إضافته بالجافاسكربت) */
         .hud-visible {
             opacity: 1;
             transform: translateX(0);
@@ -81,23 +81,24 @@
 <script>
     const API_URL = "/api/data";
     
-    // --- إعدادات المؤقت ---
-    const AUTO_HIDE_SECONDS = 15; // عدد الثواني قبل أن تختفي القائمة (عدلها كما تحب)
+    // ============================================
+    // إعدادات المؤقت
+    // ============================================
+    const AUTO_HIDE_SECONDS = 15; // عدل هذا الرقم لتغيير مدة البقاء (بالثواني)
     let hideTimer = null;
-
     let currentTasks = [];
 
-    // دالة لإظهار القائمة وإعادة تشغيل المؤقت
+    // دالة إيقاظ القائمة (إظهارها)
     function wakeUpHud() {
         const hud = document.getElementById('hudContainer');
         
-        // 1. إظهار القائمة
+        // 1. إظهار
         hud.classList.add('hud-visible');
         
-        // 2. إلغاء أي مؤقت سابق (إذا جاء تحديث جديد قبل انتهاء الوقت)
+        // 2. تصفير العداد السابق إذا وجد
         if (hideTimer) clearTimeout(hideTimer);
         
-        // 3. بدء مؤقت جديد للإخفاء
+        // 3. بدء عداد جديد للإخفاء
         hideTimer = setTimeout(() => {
             hud.classList.remove('hud-visible');
         }, AUTO_HIDE_SECONDS * 1000);
@@ -112,13 +113,15 @@
     }
 
     function updateList(newTasks) {
-        // التحقق هل حدث تغيير يستحق إظهار القائمة؟
-        // (نقارن المصفوفة الجديدة بالقديمة كنص JSON)
+        // فحص هل تغيرت البيانات؟
         const hasChanged = JSON.stringify(newTasks) !== JSON.stringify(currentTasks);
         
-        // إذا تغيرت البيانات، أو كانت هذه أول مرة يشتغل فيها الكود -> أظهر القائمة
+        // إذا حدث تغيير في البيانات أو كانت هذه أول مرة يشتغل فيها الكود
         if (hasChanged || currentTasks.length === 0) {
-            wakeUpHud();
+            // شرط إضافي: لا تظهر القائمة إذا كانت فارغة تماماً
+            if (newTasks.length > 0) {
+                wakeUpHud();
+            }
         }
 
         const mainList = document.getElementById('main-list');
@@ -157,6 +160,7 @@
             }
         });
 
+        // إخفاء الأقسام الفارغة
         mainSection.style.display = hasMain ? 'block' : 'none';
         sideSection.style.display = hasSide ? 'block' : 'none';
 
@@ -164,9 +168,9 @@
     }
 
     async function toggleTaskStatus(task) {
-        // عند الضغط يدوياً، نعيد إيقاظ القائمة لتبقى ظاهرة
+        // عند النقر يدوياً، أظهر القائمة (لأن المشاهد قد يريد رؤيتها وهي تختفي)
         wakeUpHud();
-        
+
         task.done = !task.done;
         const idx = currentTasks.findIndex(t => t.id === task.id);
         if(idx > -1) currentTasks[idx] = task;
