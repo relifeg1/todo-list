@@ -3,81 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تحكم Todo List</title>
+    <title>Game HUD Admin</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #e0e0e0; padding: 20px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 500px; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        h2 { text-align: center; color: #fff; margin-bottom: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: #eee; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 600px; background: #1a1a1a; padding: 25px; border-radius: 8px; border: 1px solid #333; }
+        h2 { text-align: center; color: #ff9800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; }
         
         .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        input[type="text"] { flex-grow: 1; padding: 12px; border-radius: 6px; border: 1px solid #333; background: #2c2c2c; color: white; font-size: 16px; outline: none; transition: border 0.3s; }
-        input[type="text"]:focus { border-color: #4CAF50; }
         
-        button#addBtn { padding: 12px 20px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.3s; }
-        button#addBtn:hover { background: #45a049; }
-
-        ul { list-style: none; padding: 0; margin: 0; }
-        li { background: #2c2c2c; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; transition: all 0.2s; border-right: 4px solid transparent; }
-        li:hover { transform: translateX(-5px); }
-        li.done { text-decoration: line-through; opacity: 0.5; border-right: 4px solid #4CAF50; }
+        /* تصميم الـ Input والـ Select */
+        input[type="text"] { flex-grow: 2; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; outline: none; }
+        select { flex-grow: 1; padding: 12px; background: #222; border: 1px solid #444; color: #aaa; border-radius: 4px; cursor: pointer; }
         
-        .actions { display: flex; gap: 8px; }
-        .btn-action { border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
-        .btn-action:hover { opacity: 0.8; }
-        .check-btn { background: #2196F3; color: white; }
-        .delete-btn { background: #f44336; color: white; }
+        button#addBtn { padding: 12px 25px; background: #ff9800; color: black; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; text-transform: uppercase; }
+        button#addBtn:hover { background: #e68900; }
 
-        .status { margin-top: 15px; text-align: center; font-size: 0.9em; color: #888; }
+        ul { list-style: none; padding: 0; }
+        li { background: #252525; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; }
+        
+        /* تمييز الألوان في القائمة */
+        li.type-main { border-right-color: #ff9800; }
+        li.type-side { border-right-color: #00bcd4; }
+        
+        li.done { opacity: 0.5; text-decoration: line-through; }
+        
+        .badge { font-size: 0.7em; padding: 2px 6px; border-radius: 3px; margin-left: 8px; }
+        .badge-main { background: #ff9800; color: black; }
+        .badge-side { background: #00bcd4; color: black; }
+
+        .btn-action { border: none; background: none; cursor: pointer; font-size: 1.2em; margin-right: 5px; }
+        .delete-btn { color: #f44336; }
+        .check-btn { color: #4CAF50; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>لوحة التحكم (Admin)</h2>
+    <h2>Operations Center</h2>
     
     <div class="input-group">
-        <input type="text" id="newTask" placeholder="اكتب الهدف هنا..." onkeypress="handleEnter(event)">
-        <button id="addBtn" onclick="addTask()">إضافة</button>
+        <input type="text" id="newTask" placeholder="أدخل اسم المهمة..." onkeypress="handleEnter(event)">
+        
+        <select id="taskType">
+            <option value="main">رئيسية (Main)</option>
+            <option value="side">جانبية (Side)</option>
+        </select>
+        
+        <button id="addBtn" onclick="addTask()">ADD</button>
     </div>
 
     <ul id="taskList"></ul>
-    <div id="statusMsg" class="status">جاري الاتصال...</div>
+    <div id="statusMsg" style="text-align:center; color:#555; font-size:0.8em; margin-top:10px;">Ready</div>
 </div>
 
 <script>
-    // التعديل الجديد: الرابط أصبح داخلياً لتجنب مشاكل الحماية
     const API_URL = "/api/data";
-    
     let tasks = [];
 
-    // تحميل البيانات عند الفتح
     async function loadData() {
         try {
             const res = await fetch(API_URL);
             tasks = await res.json();
             if (!Array.isArray(tasks)) tasks = [];
             render();
-            document.getElementById('statusMsg').innerText = "تم التحميل: القائمة جاهزة";
-            document.getElementById('statusMsg').style.color = "#4CAF50";
-        } catch(e) { 
-            console.error(e);
-            document.getElementById('statusMsg').innerText = "خطأ في التحميل! تأكد من تشغيل السيرفر";
-            document.getElementById('statusMsg').style.color = "#f44336";
-        }
+        } catch(e) { console.error(e); }
     }
 
-    // رسم القائمة في الصفحة
     function render() {
         const list = document.getElementById('taskList');
         list.innerHTML = "";
         tasks.forEach((task, index) => {
             const li = document.createElement('li');
-            li.className = task.done ? 'done' : '';
+            li.className = `type-${task.type || 'main'} ${task.done ? 'done' : ''}`; // دعم المهام القديمة
+            
+            const typeLabel = (task.type === 'side') ? '<span class="badge badge-side">Side</span>' : '<span class="badge badge-main">Main</span>';
+
             li.innerHTML = `
-                <span style="font-size:18px;">${task.text}</span>
-                <div class="actions">
+                <div style="display:flex; align-items:center;">
+                    ${typeLabel}
+                    <span style="margin-right:10px; font-size:16px;">${task.text}</span>
+                </div>
+                <div>
                     <button class="btn-action check-btn" onclick="toggleTask(${index})">✔</button>
-                    <button class="btn-action delete-btn" onclick="deleteTask(${index})">🗑️</button>
+                    <button class="btn-action delete-btn" onclick="deleteTask(${index})">✕</button>
                 </div>
             `;
             list.appendChild(li);
@@ -86,23 +94,26 @@
 
     function addTask() {
         const input = document.getElementById('newTask');
+        const typeSelect = document.getElementById('taskType');
+        
         if (!input.value.trim()) return;
-        tasks.push({ text: input.value, done: false, id: Date.now() });
+        
+        tasks.push({ 
+            text: input.value, 
+            done: false, 
+            id: Date.now(),
+            type: typeSelect.value // حفظ نوع المهمة
+        });
+        
         input.value = "";
         render();
         syncData();
     }
 
-    function handleEnter(e) {
-        if (e.key === 'Enter') addTask();
-    }
+    function handleEnter(e) { if (e.key === 'Enter') addTask(); }
 
     function deleteTask(index) {
-        if(confirm('هل أنت متأكد من حذف هذا الهدف؟')) {
-            tasks.splice(index, 1);
-            render();
-            syncData();
-        }
+        if(confirm('حذف المهمة؟')) { tasks.splice(index, 1); render(); syncData(); }
     }
 
     function toggleTask(index) {
@@ -111,24 +122,16 @@
         syncData();
     }
 
-    // الحفظ عن طريق السيرفر
     async function syncData() {
-        const status = document.getElementById('statusMsg');
-        status.innerText = "جاري الحفظ...";
-        status.style.color = "#FFC107";
-        
+        document.getElementById('statusMsg').innerText = "Saving...";
         try {
             await fetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(tasks)
             });
-            status.innerText = "تم التحديث في البث!";
-            status.style.color = "#4CAF50";
-        } catch(e) {
-            status.innerText = "فشل الحفظ!";
-            status.style.color = "#f44336";
-        }
+            document.getElementById('statusMsg').innerText = "Synced";
+        } catch(e) { document.getElementById('statusMsg').innerText = "Error"; }
     }
 
     loadData();

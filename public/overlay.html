@@ -2,139 +2,104 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Game HUD Overlay</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    <title>HUD Overlay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     
     <style>
         body { 
-            font-family: 'Rajdhani', 'Segoe UI', sans-serif; 
-            margin: 0; padding: 15px; 
+            font-family: 'Rajdhani', sans-serif; 
+            margin: 0; padding: 20px; 
             background-color: transparent; 
             overflow: hidden; 
             color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* محاذاة لليمين لأننا عربي */
         }
 
-        /* الحاوية الرئيسية */
-        .hud-container {
-            width: 350px;
-            /* خلفية شفافة تماماً */
-            background: transparent; 
+        .hud-wrapper {
+            width: 400px;
+            /* خط عمودي نحيف يجمع القائمة مثل The Division */
+            border-right: 2px solid rgba(255, 255, 255, 0.1);
+            padding-right: 15px; 
         }
 
-        /* عنوان القائمة - ستايل عسكري/تقني */
-        .mission-header {
+        /* --- العناوين --- */
+        .section-title {
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            margin-top: 15px;
+            opacity: 0.8;
+            font-weight: 700;
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-            padding-bottom: 5px;
-            width: fit-content;
         }
 
-        .mission-header h2 {
-            margin: 0;
-            font-size: 24px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #FFD700; /* لون ذهبي */
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.6); /* توهج */
-            margin-left: 10px;
-        }
-
-        .mission-icon {
-            background: #FFD700;
-            color: black;
-            font-weight: bold;
-            padding: 2px 6px;
-            font-size: 14px;
-            border-radius: 2px;
-            margin-left: 10px;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
-        }
+        /* لون مميز للرئيسية (برتقالي ديفجن) */
+        .title-main { color: #ff9800; text-shadow: 0 0 10px rgba(255, 152, 0, 0.4); }
+        
+        /* لون مميز للجانبية (أزرق سايبر) */
+        .title-side { color: #00bcd4; text-shadow: 0 0 10px rgba(0, 188, 212, 0.4); margin-top: 25px; }
 
         ul { list-style: none; padding: 0; margin: 0; }
-        
+
+        /* --- العناصر --- */
         li {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 8px 10px;
-            margin-bottom: 8px;
-            font-size: 22px;
-            font-weight: 700;
-            
-            /* خلفية متدرجة شفافة جداً من اليمين لليسار */
-            background: linear-gradient(270deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
-            border-right: 4px solid rgba(255, 255, 255, 0.3); /* خط جانبي */
-            
-            text-shadow: 2px 2px 4px #000; /* ظل أسود قوي للقراءة */
+            margin-bottom: 4px;
             cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        li:hover {
-            border-right-color: #FFD700;
-            background: linear-gradient(270deg, rgba(255, 215, 0, 0.2) 0%, rgba(0,0,0,0) 100%);
-        }
-
-        /* تصميم أيقونة المهمة (الماسية) */
-        .quest-marker {
-            width: 14px;
-            height: 14px;
-            border: 2px solid #fff;
-            transform: rotate(45deg); /* تدوير لتصبح معين */
-            margin-right: 15px; /* مسافة عن النص */
-            box-shadow: 0 0 5px #fff;
-            transition: all 0.3s;
             position: relative;
+            transition: all 0.3s;
         }
 
-        /* --- حالة الانتهاء (Mission Complete) --- */
-        li.done {
-            color: #888;
-            text-decoration: line-through;
-            border-right-color: #4CAF50;
-            background: transparent;
-            opacity: 0.6;
+        /* ستايل المهام الرئيسية */
+        .task-main {
+            font-size: 24px; /* خط كبير */
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        .task-main .marker { color: #ff9800; margin-left: 8px; font-size: 18px; }
+
+        /* ستايل المهام الثانوية */
+        .task-side {
+            font-size: 18px; /* خط أصغر */
+            font-weight: 500;
+            color: #ddd; /* لون أبيض مائل للرمادي */
+            padding-right: 15px; /* إزاحة للداخل (Indentation) */
         }
 
-        li.done .quest-marker {
-            background: #4CAF50; /* تعبئة خضراء */
-            border-color: #4CAF50;
-            box-shadow: 0 0 10px #4CAF50;
-        }
+        .task-side .marker { color: #00bcd4; margin-left: 8px; font-size: 14px; }
 
-        /* أنميشن لحظة الانتهاء */
-        @keyframes mission-success {
-            0% { color: #fff; transform: scale(1); text-shadow: 0 0 5px #fff; }
-            50% { color: #FFD700; transform: scale(1.1); text-shadow: 0 0 20px #FFD700; border-right-color: #FFD700;}
-            100% { color: #888; transform: scale(1); }
-        }
+        /* --- حالة الانتهاء --- */
+        li.done { opacity: 0.4; filter: grayscale(100%); }
+        li.done span { text-decoration: line-through; }
 
-        .just-completed {
-            animation: mission-success 1s ease-out forwards;
-        }
-
-        /* أنميشن دخول المهمة الجديدة */
-        @keyframes slide-in-glitch {
-            0% { opacity: 0; transform: translateX(50px); }
-            60% { opacity: 1; transform: translateX(-10px); }
+        /* أنميشن الوميض */
+        @keyframes scan-flash {
+            0% { opacity: 0; transform: translateX(10px); }
             100% { opacity: 1; transform: translateX(0); }
         }
-        .new-task-anim {
-            animation: slide-in-glitch 0.4s ease-out forwards;
-        }
+        .new-entry { animation: scan-flash 0.5s ease-out forwards; }
 
     </style>
 </head>
 <body>
 
-<div class="hud-container">
-    <div class="mission-header">
-        <div class="mission-icon">QUESTS</div> <h2>المهام الحالية</h2>
+<div class="hud-wrapper">
+    <div id="main-section" style="display:none;">
+        <div class="section-title title-main">/// MAIN OPERATIONS</div>
+        <ul id="main-list"></ul>
     </div>
-    
-    <ul id="list"></ul>
+
+    <div id="side-section" style="display:none;">
+        <div class="section-title title-side">/// OPTIONAL OBJECTIVES</div>
+        <ul id="side-list"></ul>
+    </div>
 </div>
 
 <script>
@@ -145,65 +110,66 @@
         try {
             const res = await fetch(API_URL);
             const newTasks = await res.json();
-            if(Array.isArray(newTasks)) {
-                updateList(newTasks);
-            }
-        } catch(e) { console.error("Error fetching data:", e); }
+            if(Array.isArray(newTasks)) updateList(newTasks);
+        } catch(e) { console.error(e); }
     }
 
     function updateList(newTasks) {
-        const list = document.getElementById('list');
+        const mainList = document.getElementById('main-list');
+        const sideList = document.getElementById('side-list');
+        const mainSection = document.getElementById('main-section');
+        const sideSection = document.getElementById('side-section');
+
+        // تفريغ القوائم لإعادة الرسم (لضمان الترتيب الصحيح)
+        mainList.innerHTML = '';
+        sideList.innerHTML = '';
         
-        newTasks.forEach(newTask => {
-            const oldTask = currentTasks.find(t => t.id === newTask.id);
-            let el = document.getElementById(`task-${newTask.id}`);
+        let hasMain = false;
+        let hasSide = false;
+
+        newTasks.forEach(task => {
+            const isSide = task.type === 'side';
+            const li = document.createElement('li');
+            li.id = `task-${task.id}`;
+            li.className = isSide ? 'task-side' : 'task-main';
+            if (task.done) li.classList.add('done');
             
-            if (!el) {
-                el = document.createElement('li');
-                el.id = `task-${newTask.id}`;
-                el.onclick = () => toggleTaskStatus(newTask); 
-                
-                // الهيكل: النص أولاً ثم المعين (لأننا عربي RTL)
-                el.innerHTML = `
-                    <span>${newTask.text}</span>
-                    <div class="quest-marker"></div>
-                `;
-                el.classList.add('new-task-anim');
-                list.appendChild(el);
-            } else {
-                const textSpan = el.querySelector('span');
-                if(textSpan.innerText !== newTask.text) textSpan.innerText = newTask.text;
-                el.onclick = () => toggleTaskStatus(newTask);
-            }
+            // إضافة كلاس أنميشن للعناصر الجديدة
+            const oldTask = currentTasks.find(t => t.id === task.id);
+            if (!oldTask) li.classList.add('new-entry');
 
-            if (newTask.done) {
-                if (!oldTask || !oldTask.done) {
-                    el.classList.add('just-completed');
-                    setTimeout(() => el.classList.remove('just-completed'), 1000);
-                }
-                el.classList.add('done');
+            // دعم الضغط لإنهاء المهمة
+            li.onclick = () => toggleTaskStatus(task);
+
+            // الرمز يتغير حسب النوع
+            const marker = isSide ? '◇' : '◆'; 
+
+            li.innerHTML = `
+                <span>${task.text}</span>
+                <span class="marker">${marker}</span>
+            `;
+
+            if (isSide) {
+                sideList.appendChild(li);
+                hasSide = true;
             } else {
-                el.classList.remove('done');
+                mainList.appendChild(li);
+                hasMain = true;
             }
         });
 
-        currentTasks.forEach(oldTask => {
-            if (!newTasks.find(t => t.id === oldTask.id)) {
-                const el = document.getElementById(`task-${oldTask.id}`);
-                if(el) {
-                    el.style.opacity = '0';
-                    setTimeout(() => el.remove(), 400);
-                }
-            }
-        });
+        // إخفاء العناوين إذا لم تكن هناك مهام
+        mainSection.style.display = hasMain ? 'block' : 'none';
+        sideSection.style.display = hasSide ? 'block' : 'none';
 
         currentTasks = newTasks;
     }
 
     async function toggleTaskStatus(task) {
         task.done = !task.done;
-        const taskIndex = currentTasks.findIndex(t => t.id === task.id);
-        if(taskIndex > -1) currentTasks[taskIndex] = task;
+        // تحديث محلي سريع
+        const idx = currentTasks.findIndex(t => t.id === task.id);
+        if(idx > -1) currentTasks[idx] = task;
         
         try {
             await fetch(API_URL, {
@@ -211,8 +177,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(currentTasks)
             });
-            updateList([...currentTasks]); 
-        } catch(e) { console.error("Failed to update status", e); }
+            updateList([...currentTasks]);
+        } catch(e) { console.error(e); }
     }
 
     setInterval(fetchData, 2000);
