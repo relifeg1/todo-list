@@ -2,135 +2,139 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>OBS Overlay</title>
+    <title>Game HUD Overlay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    
     <style>
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; padding: 10px; 
-            background-color: transparent; /* خلفية الصفحة شفافة */
+            font-family: 'Rajdhani', 'Segoe UI', sans-serif; 
+            margin: 0; padding: 15px; 
+            background-color: transparent; 
             overflow: hidden; 
-        }
-
-        /* حاوية القائمة شفافة تماماً */
-        .todo-card {
-            width: 320px;
-            background: transparent; 
-            box-shadow: none;
-            border: none;
-        }
-
-        /* عنوان القائمة */
-        .card-header {
-            padding: 5px 10px;
-            margin-bottom: 10px;
-            /* خط فاصل بسيط تحت العنوان */
-            border-bottom: 2px solid rgba(76, 175, 80, 0.8); 
-            display: inline-block; /* ليكون العرض على قد النص */
-        }
-
-        .card-header h2 {
-            margin: 0;
             color: white;
-            font-size: 18px;
-            font-weight: 800;
-            text-transform: uppercase;
-            text-shadow: 2px 2px 4px #000; /* ظل للنص للوضوح */
         }
 
-        .card-body { padding: 0; }
+        /* الحاوية الرئيسية */
+        .hud-container {
+            width: 350px;
+            /* خلفية شفافة تماماً */
+            background: transparent; 
+        }
+
+        /* عنوان القائمة - ستايل عسكري/تقني */
+        .mission-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 5px;
+            width: fit-content;
+        }
+
+        .mission-header h2 {
+            margin: 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #FFD700; /* لون ذهبي */
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.6); /* توهج */
+            margin-left: 10px;
+        }
+
+        .mission-icon {
+            background: #FFD700;
+            color: black;
+            font-weight: bold;
+            padding: 2px 6px;
+            font-size: 14px;
+            border-radius: 2px;
+            margin-left: 10px;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+        }
 
         ul { list-style: none; padding: 0; margin: 0; }
         
         li {
-            /* خلفية شفافة جداً للعنصر نفسه لتمييزه قليلاً */
-            background: rgba(0, 0, 0, 0.2); 
-            color: #fff;
-            padding: 8px 12px;
-            margin-bottom: 6px;
-            border-radius: 6px;
-            font-size: 18px;
-            font-weight: 600;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            transition: all 0.3s ease;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            font-size: 22px;
+            font-weight: 700;
+            
+            /* خلفية متدرجة شفافة جداً من اليمين لليسار */
+            background: linear-gradient(270deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
+            border-right: 4px solid rgba(255, 255, 255, 0.3); /* خط جانبي */
+            
+            text-shadow: 2px 2px 4px #000; /* ظل أسود قوي للقراءة */
             cursor: pointer;
-            
-            /* ظل قوي للنص ليظهر فوق أي لعبة */
-            text-shadow: 1px 1px 3px #000;
-            
-            /* حدود جانبية جمالية */
-            border-right: 4px solid rgba(76, 175, 80, 0.6);
+            transition: all 0.3s ease;
         }
 
         li:hover {
-            background: rgba(0, 0, 0, 0.4);
+            border-right-color: #FFD700;
+            background: linear-gradient(270deg, rgba(255, 215, 0, 0.2) 0%, rgba(0,0,0,0) 100%);
         }
 
-        /* --- تصميم مربع الشيك (Checkbox) --- */
-        .custom-checkbox {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            margin-right: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 3px #000;
+        /* تصميم أيقونة المهمة (الماسية) */
+        .quest-marker {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #fff;
+            transform: rotate(45deg); /* تدوير لتصبح معين */
+            margin-right: 15px; /* مسافة عن النص */
+            box-shadow: 0 0 5px #fff;
+            transition: all 0.3s;
+            position: relative;
         }
 
-        /* --- حالات الأنميشن --- */
+        /* --- حالة الانتهاء (Mission Complete) --- */
         li.done {
-            opacity: 0.6;
+            color: #888;
             text-decoration: line-through;
-            border-right-color: #888;
-            background: transparent; /* إخفاء الخلفية عند الانتهاء */
+            border-right-color: #4CAF50;
+            background: transparent;
+            opacity: 0.6;
         }
 
-        li.done .custom-checkbox {
-            background-color: #4CAF50;
+        li.done .quest-marker {
+            background: #4CAF50; /* تعبئة خضراء */
             border-color: #4CAF50;
+            box-shadow: 0 0 10px #4CAF50;
         }
 
-        li.done .custom-checkbox::after {
-            content: '✔';
-            color: white;
-            font-size: 14px;
-            text-shadow: none;
-        }
-
-        /* أنميشن الوميض */
-        @keyframes flash-success {
-            0% { background-color: rgba(255, 255, 255, 0.8); transform: scale(1.05); }
-            50% { background-color: rgba(76, 175, 80, 0.8); transform: scale(1.1); }
-            100% { background-color: transparent; transform: scale(1); }
+        /* أنميشن لحظة الانتهاء */
+        @keyframes mission-success {
+            0% { color: #fff; transform: scale(1); text-shadow: 0 0 5px #fff; }
+            50% { color: #FFD700; transform: scale(1.1); text-shadow: 0 0 20px #FFD700; border-right-color: #FFD700;}
+            100% { color: #888; transform: scale(1); }
         }
 
         .just-completed {
-            animation: flash-success 0.8s ease-out forwards;
+            animation: mission-success 1s ease-out forwards;
         }
 
-        /* دخول العنصر */
-        .new-task-anim {
-            animation: slide-in 0.4s ease-out forwards;
+        /* أنميشن دخول المهمة الجديدة */
+        @keyframes slide-in-glitch {
+            0% { opacity: 0; transform: translateX(50px); }
+            60% { opacity: 1; transform: translateX(-10px); }
+            100% { opacity: 1; transform: translateX(0); }
         }
-        @keyframes slide-in {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
+        .new-task-anim {
+            animation: slide-in-glitch 0.4s ease-out forwards;
         }
 
     </style>
 </head>
 <body>
 
-<div class="todo-card">
-    <div class="card-header">
-        <h2>قائمة المهام</h2>
+<div class="hud-container">
+    <div class="mission-header">
+        <div class="mission-icon">QUESTS</div> <h2>المهام الحالية</h2>
     </div>
-    <div class="card-body">
-        <ul id="list"></ul>
-    </div>
+    
+    <ul id="list"></ul>
 </div>
 
 <script>
@@ -158,9 +162,11 @@
                 el = document.createElement('li');
                 el.id = `task-${newTask.id}`;
                 el.onclick = () => toggleTaskStatus(newTask); 
+                
+                // الهيكل: النص أولاً ثم المعين (لأننا عربي RTL)
                 el.innerHTML = `
                     <span>${newTask.text}</span>
-                    <div class="custom-checkbox"></div>
+                    <div class="quest-marker"></div>
                 `;
                 el.classList.add('new-task-anim');
                 list.appendChild(el);
