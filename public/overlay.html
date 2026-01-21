@@ -4,62 +4,72 @@
     <meta charset="UTF-8">
     <title>OBS Overlay</title>
     <style>
-        /* إعدادات الصفحة الشفافة */
+        /* إزالة الهوامش وجعل الخلفية شفافة تماماً */
         body { 
-            font-family: 'Segoe UI', sans-serif; 
-            margin: 0; padding: 20px; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 10px; 
             background-color: transparent; 
             overflow: hidden; 
         }
 
         .todo-container {
-            width: 350px; /* عرض القائمة في البث */
-            background: rgba(18, 18, 18, 0.85); /* خلفية داكنة نصف شفافة */
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-            border-right: 6px solid #4CAF50; /* خط أخضر جمالي يمين القائمة */
-            backdrop-filter: blur(5px); /* تأثير ضبابي للخلفية */
+            width: 350px; 
+            /* حذفنا الخلفية والحدود لتكون شفافة */
+            background: transparent; 
+            box-shadow: none;
+            border: none;
         }
 
         h2 { 
-            margin: 0 0 15px 0; 
-            color: #fff; 
-            font-size: 22px; 
-            font-weight: 800;
+            /* عنوان صغير وشبه شفاف */
+            margin: 0 0 10px 0; 
+            color: rgba(255, 255, 255, 0.8); 
+            font-size: 16px; 
+            font-weight: 700;
             text-transform: uppercase; 
-            border-bottom: 2px solid #333; 
-            padding-bottom: 10px; 
             text-align: right;
-            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px #000; /* ظل أسود للوضوح */
+            opacity: 0.7; /* خافت قليلاً لعدم الإزعاج */
         }
 
         ul { list-style: none; padding: 0; margin: 0; }
         
         li {
-            background: rgba(255, 255, 255, 0.08);
+            /* خلفية شبه شفافة جداً فقط لتمييز السطر */
+            background: rgba(0, 0, 0, 0.4); 
             color: white;
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            font-size: 20px;
+            padding: 8px 12px; /* تقليل الحجم */
+            margin-bottom: 6px;
+            border-radius: 6px;
+            font-size: 18px; /* حجم مناسب */
             font-weight: 600;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* حركة ناعمة */
-            border: 1px solid transparent;
+            transition: all 0.4s ease;
+            
+            /* حدود مضيئة خفيفة */
+            border-left: 4px solid #4CAF50; 
+            
+            /* ظل قوي للنص ليظهر فوق أي لعبة */
+            text-shadow: 1px 1px 3px #000;
+        }
+
+        /* تأثير عند التحويم (لو حبيت تتفاعل معها بالماوس) */
+        li:hover {
+            background: rgba(0, 0, 0, 0.6);
         }
 
         /* --- حالات الأنميشن --- */
 
         /* 1. حالة الانتهاء */
         li.done {
-            background: rgba(76, 175, 80, 0.1);
+            background: rgba(76, 175, 80, 0.2); /* أخضر شفاف جداً */
             text-decoration: line-through;
-            color: #888;
-            border-color: #4CAF50;
-            opacity: 0.8;
+            color: #ccc;
+            border-left-color: #888;
+            opacity: 0.7;
             transform: scale(0.98);
         }
 
@@ -67,25 +77,25 @@
         li.done::after {
             content: '✔';
             color: #4CAF50;
-            font-size: 1.2em;
-            font-weight: bold;
+            font-size: 1.1em;
+            text-shadow: 0 0 5px #000;
         }
 
-        /* 2. أنميشن لحظة الانتهاء (وميض) */
+        /* 2. أنميشن الوميض القوي (الاحتفال) */
         @keyframes flash-success {
-            0% { background-color: #fff; color: #000; transform: scale(1.1); }
-            50% { background-color: #4CAF50; color: #fff; transform: scale(1.05); }
-            100% { background-color: rgba(76, 175, 80, 0.1); color: #888; transform: scale(0.98); }
+            0% { background-color: rgba(255, 255, 255, 0.8); transform: scale(1.05); }
+            50% { background-color: rgba(76, 175, 80, 0.8); transform: scale(1.1); }
+            100% { background-color: rgba(76, 175, 80, 0.2); transform: scale(0.98); }
         }
 
         .just-completed {
             animation: flash-success 0.8s ease-out forwards;
         }
 
-        /* 3. أنميشن عند إضافة عنصر جديد */
+        /* 3. دخول العنصر */
         @keyframes slide-in {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
         }
         .new-task-anim {
             animation: slide-in 0.4s ease-out forwards;
@@ -93,20 +103,17 @@
 
     </style>
 </head>
-<body>
-
-<div class="todo-container">
-    <h2>🎯 المهام الحالية</h2>
+<body ondblclick="fetchData()"> <div class="todo-container">
+    <h2>📝 المهام</h2>
     <ul id="list"></ul>
 </div>
 
 <script>
-    // التعديل الجديد: استخدام الرابط الداخلي للسيرفر
+    // الرابط الداخلي للسيرفر
     const API_URL = "/api/data";
     
     let currentTasks = [];
 
-    // دالة جلب البيانات
     async function fetchData() {
         try {
             const res = await fetch(API_URL);
@@ -117,49 +124,41 @@
         } catch(e) { console.error("Error fetching data:", e); }
     }
 
-    // دالة تحديث القائمة والأنميشن
     function updateList(newTasks) {
         const list = document.getElementById('list');
         
-        // التحقق من المهام الجديدة والتغييرات
         newTasks.forEach(newTask => {
             const oldTask = currentTasks.find(t => t.id === newTask.id);
             let el = document.getElementById(`task-${newTask.id}`);
             
-            // 1. إذا المهمة غير موجودة، أنشئها
             if (!el) {
                 el = document.createElement('li');
                 el.id = `task-${newTask.id}`;
                 el.innerText = newTask.text;
-                el.classList.add('new-task-anim'); // أنميشن الدخول
+                el.classList.add('new-task-anim');
                 list.appendChild(el);
             } else {
-                // تحديث النص لو تغير
                 if(el.childNodes[0].nodeValue !== newTask.text) {
                      el.innerText = newTask.text; 
                 }
             }
 
-            // 2. معالجة حالة الانتهاء والأنميشن
             if (newTask.done) {
-                // إذا كانت المهمة غير منتهية سابقاً وأصبحت منتهية الآن
                 if (!oldTask || !oldTask.done) {
                     el.classList.add('just-completed');
                     setTimeout(() => el.classList.remove('just-completed'), 1000);
                 }
-                // ضمان وجود كلاس done
                 el.classList.add('done');
             } else {
                 el.classList.remove('done');
             }
         });
 
-        // 3. حذف المهام التي تم مسحها من الأدمن
         currentTasks.forEach(oldTask => {
             if (!newTasks.find(t => t.id === oldTask.id)) {
                 const el = document.getElementById(`task-${oldTask.id}`);
                 if(el) {
-                    el.style.opacity = '0'; // إخفاء تدريجي
+                    el.style.opacity = '0';
                     setTimeout(() => el.remove(), 400);
                 }
             }
@@ -168,10 +167,7 @@
         currentTasks = newTasks;
     }
 
-    // التحديث التلقائي كل ثانيتين
     setInterval(fetchData, 2000);
-    
-    // تشغيل فوري عند الفتح
     fetchData();
 </script>
 
