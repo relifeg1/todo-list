@@ -2,89 +2,105 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>HUD Overlay</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <title>HUD Overlay AR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700;800&display=swap" rel="stylesheet">
     
     <style>
         body { 
-            font-family: 'Rajdhani', sans-serif; 
-            margin: 0; padding: 20px; 
+            font-family: 'Changa', sans-serif; 
+            margin: 0; padding: 25px; 
             background-color: transparent; 
             overflow: hidden; 
             color: white;
             display: flex;
             flex-direction: column;
-            align-items: flex-start; /* محاذاة لليمين لأننا عربي */
+            align-items: flex-start; /* محاذاة لليمين تلقائياً بسبب dir=rtl */
         }
 
         .hud-wrapper {
-            width: 400px;
-            /* خط عمودي نحيف يجمع القائمة مثل The Division */
-            border-right: 2px solid rgba(255, 255, 255, 0.1);
-            padding-right: 15px; 
+            width: 450px;
+            /* خط التجميع على اليمين ليناسب العربية */
+            border-right: 3px solid rgba(255, 255, 255, 0.15);
+            padding-right: 20px; 
         }
 
-        /* --- العناوين --- */
+        /* --- العناوين (Headers) --- */
         .section-title {
-            font-size: 14px;
-            letter-spacing: 2px;
-            margin-bottom: 5px;
-            margin-top: 15px;
-            opacity: 0.8;
-            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 8px;
+            margin-top: 20px;
+            opacity: 0.9;
+            font-weight: 800; /* وزن ثقيل للعنوان */
             display: flex;
             align-items: center;
         }
 
-        /* لون مميز للرئيسية (برتقالي ديفجن) */
-        .title-main { color: #ff9800; text-shadow: 0 0 10px rgba(255, 152, 0, 0.4); }
+        /* تنسيق العنوان الرئيسي */
+        .title-main { 
+            color: #ff9800; 
+            text-shadow: 0 0 15px rgba(255, 152, 0, 0.5); 
+        }
         
-        /* لون مميز للجانبية (أزرق سايبر) */
-        .title-side { color: #00bcd4; text-shadow: 0 0 10px rgba(0, 188, 212, 0.4); margin-top: 25px; }
+        /* تنسيق العنوان الجانبي */
+        .title-side { 
+            color: #00bcd4; 
+            text-shadow: 0 0 15px rgba(0, 188, 212, 0.5); 
+            margin-top: 30px; 
+        }
 
         ul { list-style: none; padding: 0; margin: 0; }
 
-        /* --- العناصر --- */
+        /* --- عناصر القائمة --- */
         li {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            margin-bottom: 4px;
+            justify-content: flex-start; /* ترتيب العناصر من اليمين */
+            margin-bottom: 5px;
             cursor: pointer;
             position: relative;
             transition: all 0.3s;
         }
 
-        /* ستايل المهام الرئيسية */
+        /* أيقونة المهمة (الماسية) */
+        .marker {
+            margin-left: 12px; /* مسافة بين الأيقونة والنص */
+            font-size: 14px;
+            line-height: 0;
+            transition: all 0.3s;
+        }
+
+        /* تنسيق نص المهمة الرئيسية */
         .task-main {
-            font-size: 24px; /* خط كبير */
+            font-size: 26px; /* خط كبير وواضح للعربي */
             font-weight: 700;
             color: #fff;
-            text-shadow: 1px 1px 0 #000;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.8); /* ظل قوي لضمان القراءة */
+            line-height: 1.4;
         }
-        
-        .task-main .marker { color: #ff9800; margin-left: 8px; font-size: 18px; }
+        .task-main .marker { color: #ff9800; font-size: 18px; }
 
-        /* ستايل المهام الثانوية */
+        /* تنسيق نص المهمة الثانوية */
         .task-side {
-            font-size: 18px; /* خط أصغر */
+            font-size: 20px;
             font-weight: 500;
-            color: #ddd; /* لون أبيض مائل للرمادي */
-            padding-right: 15px; /* إزاحة للداخل (Indentation) */
+            color: #e0e0e0;
+            padding-right: 10px; /* إزاحة بسيطة للداخل */
         }
-
-        .task-side .marker { color: #00bcd4; margin-left: 8px; font-size: 14px; }
+        .task-side .marker { color: #00bcd4; }
 
         /* --- حالة الانتهاء --- */
-        li.done { opacity: 0.4; filter: grayscale(100%); }
-        li.done span { text-decoration: line-through; }
+        li.done { opacity: 0.5; filter: grayscale(100%); }
+        li.done span.text { text-decoration: line-through; }
+        
+        /* تحول الأيقونة عند الانتهاء */
+        li.done .marker { color: #4CAF50 !important; transform: scale(1.2); }
 
-        /* أنميشن الوميض */
-        @keyframes scan-flash {
-            0% { opacity: 0; transform: translateX(10px); }
+        /* أنميشن الدخول (Glitch Effect بسيط) */
+        @keyframes scan-enter {
+            0% { opacity: 0; transform: translateX(20px); }
             100% { opacity: 1; transform: translateX(0); }
         }
-        .new-entry { animation: scan-flash 0.5s ease-out forwards; }
+        .new-entry { animation: scan-enter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
     </style>
 </head>
@@ -92,12 +108,12 @@
 
 <div class="hud-wrapper">
     <div id="main-section" style="display:none;">
-        <div class="section-title title-main">/// MAIN OPERATIONS</div>
+        <div class="section-title title-main">/// العمليات الرئيسية</div>
         <ul id="main-list"></ul>
     </div>
 
     <div id="side-section" style="display:none;">
-        <div class="section-title title-side">/// OPTIONAL OBJECTIVES</div>
+        <div class="section-title title-side">/// أهداف ثانوية</div>
         <ul id="side-list"></ul>
     </div>
 </div>
@@ -120,7 +136,6 @@
         const mainSection = document.getElementById('main-section');
         const sideSection = document.getElementById('side-section');
 
-        // تفريغ القوائم لإعادة الرسم (لضمان الترتيب الصحيح)
         mainList.innerHTML = '';
         sideList.innerHTML = '';
         
@@ -134,19 +149,18 @@
             li.className = isSide ? 'task-side' : 'task-main';
             if (task.done) li.classList.add('done');
             
-            // إضافة كلاس أنميشن للعناصر الجديدة
             const oldTask = currentTasks.find(t => t.id === task.id);
             if (!oldTask) li.classList.add('new-entry');
 
-            // دعم الضغط لإنهاء المهمة
             li.onclick = () => toggleTaskStatus(task);
 
-            // الرمز يتغير حسب النوع
-            const marker = isSide ? '◇' : '◆'; 
+            // الرمز الماسي
+            const markerChar = isSide ? '◇' : '◆'; 
 
+            // ترتيب العناصر: الرمز أولاً ثم النص (بسبب RTL سيظهر الرمز يمين النص)
             li.innerHTML = `
-                <span>${task.text}</span>
-                <span class="marker">${marker}</span>
+                <span class="marker">${markerChar}</span>
+                <span class="text">${task.text}</span>
             `;
 
             if (isSide) {
@@ -158,7 +172,6 @@
             }
         });
 
-        // إخفاء العناوين إذا لم تكن هناك مهام
         mainSection.style.display = hasMain ? 'block' : 'none';
         sideSection.style.display = hasSide ? 'block' : 'none';
 
@@ -167,7 +180,6 @@
 
     async function toggleTaskStatus(task) {
         task.done = !task.done;
-        // تحديث محلي سريع
         const idx = currentTasks.findIndex(t => t.id === task.id);
         if(idx > -1) currentTasks[idx] = task;
         
