@@ -4,95 +4,88 @@
     <meta charset="UTF-8">
     <title>OBS Overlay</title>
     <style>
-        /* إعدادات الصفحة */
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; padding: 20px; 
-            background-color: transparent; 
+            margin: 0; padding: 10px; 
+            background-color: transparent; /* خلفية الصفحة شفافة */
             overflow: hidden; 
-            display: flex;
-            justify-content: flex-start; /* المحاذاة لليمين لأننا عربي */
         }
 
-        /* 1. تصميم البطاقة (الكونتينر) */
+        /* حاوية القائمة شفافة تماماً */
         .todo-card {
             width: 320px;
-            background: rgba(20, 20, 20, 0.9); /* خلفية داكنة قوية */
-            border-radius: 12px;
-            padding: 0; /* سنستخدم الهيدر والجسم للتباعد */
-            box-shadow: 0 8px 25px rgba(0,0,0,0.7); /* ظل قوي للبروز */
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            overflow: hidden; /* لقص الزوايا */
-            transition: height 0.3s ease;
+            background: transparent; 
+            box-shadow: none;
+            border: none;
         }
 
-        /* 2. رأس البطاقة */
+        /* عنوان القائمة */
         .card-header {
-            background: rgba(76, 175, 80, 0.8); /* لون أخضر مميز */
-            padding: 12px 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 5px 10px;
+            margin-bottom: 10px;
+            /* خط فاصل بسيط تحت العنوان */
+            border-bottom: 2px solid rgba(76, 175, 80, 0.8); 
+            display: inline-block; /* ليكون العرض على قد النص */
         }
 
         .card-header h2 {
             margin: 0;
             color: white;
-            font-size: 16px;
-            font-weight: bold;
+            font-size: 18px;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            text-shadow: 2px 2px 4px #000; /* ظل للنص للوضوح */
         }
 
-        /* 3. جسم القائمة */
-        .card-body {
-            padding: 10px;
-        }
+        .card-body { padding: 0; }
 
         ul { list-style: none; padding: 0; margin: 0; }
         
         li {
-            background: rgba(255, 255, 255, 0.05);
-            color: #eee;
-            padding: 10px;
-            margin-bottom: 8px;
+            /* خلفية شفافة جداً للعنصر نفسه لتمييزه قليلاً */
+            background: rgba(0, 0, 0, 0.2); 
+            color: #fff;
+            padding: 8px 12px;
+            margin-bottom: 6px;
             border-radius: 6px;
             font-size: 18px;
-            font-weight: 500;
+            font-weight: 600;
             display: flex;
             align-items: center;
             justify-content: space-between;
             transition: all 0.3s ease;
-            cursor: pointer; /* مؤشر اليد للتفاعل */
-            border-right: 3px solid transparent; /* خط جمالي */
+            cursor: pointer;
+            
+            /* ظل قوي للنص ليظهر فوق أي لعبة */
+            text-shadow: 1px 1px 3px #000;
+            
+            /* حدود جانبية جمالية */
+            border-right: 4px solid rgba(76, 175, 80, 0.6);
         }
 
         li:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.4);
         }
 
-        /* --- مربع الشيك (Checkbox) --- */
+        /* --- تصميم مربع الشيك (Checkbox) --- */
         .custom-checkbox {
-            width: 22px;
-            height: 22px;
-            border: 2px solid #666;
-            border-radius: 5px;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
             margin-right: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
-            cursor: pointer;
+            box-shadow: 0 0 3px #000;
         }
 
         /* --- حالات الأنميشن --- */
-
-        /* عند الانتهاء */
         li.done {
-            background: rgba(0, 0, 0, 0.3);
+            opacity: 0.6;
             text-decoration: line-through;
-            color: #777;
-            border-right-color: #4CAF50;
+            border-right-color: #888;
+            background: transparent; /* إخفاء الخلفية عند الانتهاء */
         }
 
         li.done .custom-checkbox {
@@ -104,19 +97,21 @@
             content: '✔';
             color: white;
             font-size: 14px;
+            text-shadow: none;
         }
 
         /* أنميشن الوميض */
         @keyframes flash-success {
-            0% { background-color: #fff; transform: scale(1.02); }
-            50% { background-color: #4CAF50; transform: scale(1.05); }
-            100% { background-color: rgba(0, 0, 0, 0.3); transform: scale(1); }
+            0% { background-color: rgba(255, 255, 255, 0.8); transform: scale(1.05); }
+            50% { background-color: rgba(76, 175, 80, 0.8); transform: scale(1.1); }
+            100% { background-color: transparent; transform: scale(1); }
         }
 
         .just-completed {
-            animation: flash-success 0.6s ease-out forwards;
+            animation: flash-success 0.8s ease-out forwards;
         }
 
+        /* دخول العنصر */
         .new-task-anim {
             animation: slide-in 0.4s ease-out forwards;
         }
@@ -132,7 +127,6 @@
 <div class="todo-card">
     <div class="card-header">
         <h2>قائمة المهام</h2>
-        <span style="font-size: 12px; opacity: 0.8">LIVE</span>
     </div>
     <div class="card-body">
         <ul id="list"></ul>
@@ -143,7 +137,6 @@
     const API_URL = "/api/data";
     let currentTasks = [];
 
-    // جلب البيانات
     async function fetchData() {
         try {
             const res = await fetch(API_URL);
@@ -154,7 +147,6 @@
         } catch(e) { console.error("Error fetching data:", e); }
     }
 
-    // تحديث القائمة
     function updateList(newTasks) {
         const list = document.getElementById('list');
         
@@ -165,10 +157,7 @@
             if (!el) {
                 el = document.createElement('li');
                 el.id = `task-${newTask.id}`;
-                // إضافة حدث النقر لتغيير الحالة
                 el.onclick = () => toggleTaskStatus(newTask); 
-                
-                // الهيكل الداخلي: النص + المربع
                 el.innerHTML = `
                     <span>${newTask.text}</span>
                     <div class="custom-checkbox"></div>
@@ -176,14 +165,11 @@
                 el.classList.add('new-task-anim');
                 list.appendChild(el);
             } else {
-                // تحديث النص إذا تغير
                 const textSpan = el.querySelector('span');
                 if(textSpan.innerText !== newTask.text) textSpan.innerText = newTask.text;
-                // تحديث حدث النقر بالبيانات الجديدة
                 el.onclick = () => toggleTaskStatus(newTask);
             }
 
-            // تطبيق الستايل
             if (newTask.done) {
                 if (!oldTask || !oldTask.done) {
                     el.classList.add('just-completed');
@@ -195,7 +181,6 @@
             }
         });
 
-        // حذف القديم
         currentTasks.forEach(oldTask => {
             if (!newTasks.find(t => t.id === oldTask.id)) {
                 const el = document.getElementById(`task-${oldTask.id}`);
@@ -209,30 +194,19 @@
         currentTasks = newTasks;
     }
 
-    // --- دالة جديدة: التعديل من البث مباشرة ---
     async function toggleTaskStatus(task) {
-        // نغير الحالة محلياً
         task.done = !task.done;
-        
-        // نحدث القائمة كلها محلياً لنرسلها للسيرفر
-        // نبحث عن المهمة في القائمة الحالية ونعدلها
         const taskIndex = currentTasks.findIndex(t => t.id === task.id);
-        if(taskIndex > -1) {
-            currentTasks[taskIndex] = task;
-        }
-
-        // إرسال التحديث للسيرفر
+        if(taskIndex > -1) currentTasks[taskIndex] = task;
+        
         try {
             await fetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(currentTasks)
             });
-            // نحدث العرض فوراً ليعطي شعور بالسرعة
             updateList([...currentTasks]); 
-        } catch(e) {
-            console.error("Failed to update status", e);
-        }
+        } catch(e) { console.error("Failed to update status", e); }
     }
 
     setInterval(fetchData, 2000);
