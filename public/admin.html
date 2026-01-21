@@ -14,16 +14,17 @@
         /* قسم الإعدادات */
         .settings-bar {
             background: #252525;
-            padding: 10px;
+            padding: 15px;
             margin-bottom: 20px;
             border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             border: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        .settings-bar label { font-size: 0.9em; color: #aaa; }
-        .settings-bar input { width: 60px; text-align: center; padding: 5px; margin-right: 10px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; }
+        .setting-row label { font-size: 0.9em; color: #aaa; }
+        .setting-row input { width: 70px; text-align: center; padding: 5px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px; }
 
         .input-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;}
         
@@ -32,10 +33,12 @@
         
         button { padding: 10px 20px; border: none; font-weight: 800; cursor: pointer; border-radius: 4px; font-family: 'Changa'; transition: all 0.2s;}
         
+        button.save-btn { background: #444; color: #fff; font-size: 0.9em; width: 100%; margin-top: 10px; }
+        button.save-btn:hover { background: #555; }
+
         button#mainBtn { background: #ff9800; color: black; min-width: 80px;}
         button#mainBtn:hover { background: #e68900; }
         button#mainBtn.edit-mode { background: #2196F3; color: white; }
-        
         button#cancelBtn { background: #555; color: white; display: none; }
 
         ul { list-style: none; padding: 0; }
@@ -65,11 +68,15 @@
     <h2>لوحة التحكم</h2>
     
     <div class="settings-bar">
-        <div>
-            <label>وقت ظهور القائمة (ثواني):</label>
-            <input type="number" id="timerInput" value="15" min="1">
+        <div class="setting-row">
+            <label>⏱️ مدة البقاء ظاهراً (ثواني):</label>
+            <input type="number" id="visibleDuration" value="15" min="5">
         </div>
-        <button onclick="saveSettings()" style="background:#444; color:#fff; font-size:0.8em;">حفظ الإعدادات</button>
+        <div class="setting-row">
+            <label>💤 مدة الاختفاء/التكرار (ثواني):</label>
+            <input type="number" id="hiddenDuration" value="300" min="10" placeholder="مثلاً 300">
+        </div>
+        <button class="save-btn" onclick="saveSettings()">حفظ إعدادات التوقيت</button>
     </div>
 
     <div class="input-group">
@@ -89,10 +96,13 @@
 <script>
     const API_URL = "/api/data";
     
-    // الهيكل الجديد للبيانات: يحتوي على المهام والإعدادات
+    // الهيكل: مهام + إعدادات (وقت الظهور، وقت الاختفاء)
     let dataStore = {
         tasks: [],
-        settings: { duration: 15 }
+        settings: { 
+            visibleDuration: 15, // كم ثانية تظهر
+            hiddenDuration: 300  // كم ثانية تختفي قبل الظهور التالي (300 = 5 دقائق)
+        }
     };
     
     let isEditing = false;
@@ -103,26 +113,31 @@
             const res = await fetch(API_URL);
             const rawData = await res.json();
             
-            // معالجة البيانات القديمة (إذا كانت مصفوفة فقط) وتحويلها للهيكل الجديد
             if (Array.isArray(rawData)) {
                 dataStore.tasks = rawData;
-                dataStore.settings = { duration: 15 }; // القيمة الافتراضية
             } else if (rawData && rawData.tasks) {
                 dataStore = rawData;
             }
 
+            // التأكد من وجود القيم الافتراضية
+            if (!dataStore.settings) dataStore.settings = { visibleDuration: 15, hiddenDuration: 300 };
+
             // تحديث الواجهة
-            document.getElementById('timerInput').value = dataStore.settings.duration || 15;
+            document.getElementById('visibleDuration').value = dataStore.settings.visibleDuration || 15;
+            document.getElementById('hiddenDuration').value = dataStore.settings.hiddenDuration || 300;
             render();
         } catch(e) { console.error(e); }
     }
 
     function saveSettings() {
-        const val = parseInt(document.getElementById('timerInput').value);
-        if(val > 0) {
-            dataStore.settings.duration = val;
+        const visibleVal = parseInt(document.getElementById('visibleDuration').value);
+        const hiddenVal = parseInt(document.getElementById('hiddenDuration').value);
+        
+        if(visibleVal > 0 && hiddenVal > 0) {
+            dataStore.settings.visibleDuration = visibleVal;
+            dataStore.settings.hiddenDuration = hiddenVal;
             syncData();
-            alert("تم حفظ وقت المؤقت: " + val + " ثانية");
+            alert("تم تحديث دورة التوقيت!");
         }
     }
 
@@ -132,7 +147,6 @@
         dataStore.tasks.forEach((task, index) => {
             const li = document.createElement('li');
             li.className = `type-${task.type || 'main'} ${task.done ? 'done' : ''}`;
-            
             const typeLabel = (task.type === 'side') ? '<span class="badge badge-side">فرعي</span>' : '<span class="badge badge-main">رئيسي</span>';
 
             li.innerHTML = `
@@ -154,7 +168,6 @@
         const input = document.getElementById('taskInput');
         const typeSelect = document.getElementById('taskType');
         const text = input.value.trim();
-        
         if (!text) return;
 
         if (isEditing && currentEditId !== null) {
@@ -185,9 +198,8 @@
         document.getElementById('taskInput').focus();
         isEditing = true;
         currentEditId = task.id;
-        const mainBtn = document.getElementById('mainBtn');
-        mainBtn.innerText = "حفظ";
-        mainBtn.classList.add('edit-mode');
+        document.getElementById('mainBtn').innerText = "حفظ";
+        document.getElementById('mainBtn').classList.add('edit-mode');
         document.getElementById('cancelBtn').style.display = 'block';
     }
 
@@ -196,16 +208,15 @@
         currentEditId = null;
         document.getElementById('taskInput').value = "";
         document.getElementById('taskType').value = "main";
-        const mainBtn = document.getElementById('mainBtn');
-        mainBtn.innerText = "إضافة";
-        mainBtn.classList.remove('edit-mode');
+        document.getElementById('mainBtn').innerText = "إضافة";
+        document.getElementById('mainBtn').classList.remove('edit-mode');
         document.getElementById('cancelBtn').style.display = 'none';
     }
 
     function handleEnter(e) { if (e.key === 'Enter') submitTask(); }
 
     function deleteTask(index) {
-        if(confirm('حذف المهمة؟')) { 
+        if(confirm('حذف؟')) { 
             if(isEditing && dataStore.tasks[index].id === currentEditId) cancelEdit();
             dataStore.tasks.splice(index, 1); 
             render(); 
@@ -226,7 +237,7 @@
             await fetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dataStore) // نرسل الكائن الكامل (مهام + إعدادات)
+                body: JSON.stringify(dataStore)
             });
             status.innerText = "تم التحديث";
             setTimeout(() => status.innerText = "النظام جاهز", 2000);

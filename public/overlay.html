@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>HUD Overlay Auto-Hide</title>
+    <title>HUD Overlay Cyclic</title>
     <link href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700;800&display=swap" rel="stylesheet">
     
     <style>
@@ -22,42 +22,35 @@
             border-right: 3px solid rgba(255, 255, 255, 0.15);
             padding-right: 20px; 
             
-            /* --- إعدادات الإخفاء والمؤقت --- */
-            opacity: 0; /* مخفي افتراضياً */
-            transform: translateX(30px); /* إزاحة لليمين قليلاً */
-            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1); /* حركة ظهور ناعمة */
+            /* إعدادات الإخفاء */
+            opacity: 0; 
+            transform: translateX(30px);
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        /* كلاس الظهور (يتم إضافته بالجافاسكربت) */
         .hud-visible {
             opacity: 1;
             transform: translateX(0);
         }
 
-        /* --- العناوين --- */
+        /* العناوين والقائمة */
         .section-title {
             font-size: 16px; margin-bottom: 8px; margin-top: 20px;
             opacity: 0.9; font-weight: 800; display: flex; align-items: center;
         }
-
         .title-main { color: #ff9800; text-shadow: 0 0 15px rgba(255, 152, 0, 0.5); }
         .title-side { color: #00bcd4; text-shadow: 0 0 15px rgba(0, 188, 212, 0.5); margin-top: 30px; }
 
         ul { list-style: none; padding: 0; margin: 0; }
-
         li {
             display: flex; align-items: center; justify-content: flex-start;
             margin-bottom: 5px; cursor: pointer; position: relative; transition: all 0.3s;
         }
-
         .marker { margin-left: 12px; font-size: 14px; line-height: 0; transition: all 0.3s; }
-
         .task-main { font-size: 26px; font-weight: 700; color: #fff; text-shadow: 2px 2px 0px rgba(0,0,0,0.8); line-height: 1.4; }
         .task-main .marker { color: #ff9800; font-size: 18px; }
-
         .task-side { font-size: 20px; font-weight: 500; color: #e0e0e0; padding-right: 10px; }
         .task-side .marker { color: #00bcd4; }
-
         li.done { opacity: 0.5; filter: grayscale(100%); }
         li.done span.text { text-decoration: line-through; }
         li.done .marker { color: #4CAF50 !important; transform: scale(1.2); }
@@ -81,49 +74,99 @@
 <script>
     const API_URL = "/api/data";
     
-    // ============================================
-    // إعدادات المؤقت
-    // ============================================
-    const AUTO_HIDE_SECONDS = 15; // عدل هذا الرقم لتغيير مدة البقاء (بالثواني)
-    let hideTimer = null;
-    let currentTasks = [];
+    // متغيرات الدورة الزمنية
+    let visibleDuration = 15; // ثانية
+    let hiddenDuration = 300; // ثانية
+    
+    let activeTimer = null; // يحفظ المؤقت الحالي (سواء للإخفاء أو للإظهار)
 
-    // دالة إيقاظ القائمة (إظهارها)
-    function wakeUpHud() {
+    let currentData = { tasks: [], settings: {} };
+
+    // --- منطق الدورة (Cycle Logic) ---
+
+    // 1. دالة الإظهار (تبدأ دورة الظهور)
+    function showHud() {
         const hud = document.getElementById('hudContainer');
-        
-        // 1. إظهار
         hud.classList.add('hud-visible');
         
-        // 2. تصفير العداد السابق إذا وجد
-        if (hideTimer) clearTimeout(hideTimer);
-        
-        // 3. بدء عداد جديد للإخفاء
-        hideTimer = setTimeout(() => {
-            hud.classList.remove('hud-visible');
-        }, AUTO_HIDE_SECONDS * 1000);
+        // تنظيف أي مؤقت سابق
+        if (activeTimer) clearTimeout(activeTimer);
+
+        // بعد انتهاء وقت الظهور -> اخفِ القائمة
+        activeTimer = setTimeout(() => {
+            hideHud();
+        }, visibleDuration * 1000);
     }
+
+    // 2. دالة الإخفاء (تبدأ دورة الانتظار)
+    function hideHud() {
+        const hud = document.getElementById('hudContainer');
+        hud.classList.remove('hud-visible');
+        
+        if (activeTimer) clearTimeout(activeTimer);
+
+        // بعد انتهاء وقت الانتظار -> اظهر القائمة مرة أخرى (تكرار)
+        activeTimer = setTimeout(() => {
+            // شرط: لا تظهر القائمة الفارغة
+            if (currentData.tasks.length > 0) {
+                showHud();
+            }
+        }, hiddenDuration * 1000);
+    }
+
+    // 3. دالة المقاطعة (Trigger): تستدعى عند تحديث البيانات يدوياً
+    function triggerManualUpdate() {
+        // نقطع الدورة الحالية ونظهر القائمة فوراً
+        showHud();
+    }
+
 
     async function fetchData() {
         try {
             const res = await fetch(API_URL);
-            const newTasks = await res.json();
-            if(Array.isArray(newTasks)) updateList(newTasks);
+            const rawData = await res.json();
+            
+            let newData = { tasks: [], settings: { visibleDuration: 15, hiddenDuration: 300 } };
+            
+            if (Array.isArray(rawData)) {
+                newData.tasks = rawData;
+            } else if (rawData && rawData.tasks) {
+                newData = rawData;
+            }
+
+            // تحديث الإعدادات من السيرفر
+            if (newData.settings) {
+                if(newData.settings.visibleDuration) visibleDuration = newData.settings.visibleDuration;
+                if(newData.settings.hiddenDuration) hiddenDuration = newData.settings.hiddenDuration;
+            }
+
+            processUpdate(newData);
+
         } catch(e) { console.error(e); }
     }
 
-    function updateList(newTasks) {
-        // فحص هل تغيرت البيانات؟
-        const hasChanged = JSON.stringify(newTasks) !== JSON.stringify(currentTasks);
+    function processUpdate(newData) {
+        // فحص التغييرات في المهام
+        const tasksChanged = JSON.stringify(newData.tasks) !== JSON.stringify(currentData.tasks);
         
-        // إذا حدث تغيير في البيانات أو كانت هذه أول مرة يشتغل فيها الكود
-        if (hasChanged || currentTasks.length === 0) {
-            // شرط إضافي: لا تظهر القائمة إذا كانت فارغة تماماً
-            if (newTasks.length > 0) {
-                wakeUpHud();
+        // تحديث DOM
+        if (tasksChanged || currentData.tasks.length === 0) {
+            updateDom(newData.tasks);
+            
+            // إذا تغيرت المهام وكان هناك مهام فعلاً -> قاطع الدورة وأظهر القائمة
+            if (newData.tasks.length > 0 && tasksChanged) {
+                triggerManualUpdate();
+            }
+            // إذا كانت أول مرة تشغيل للصفحة وفيها مهام -> ابدأ الدورة
+            else if (currentData.tasks.length === 0 && newData.tasks.length > 0) {
+                triggerManualUpdate();
             }
         }
 
+        currentData = newData;
+    }
+
+    function updateDom(tasks) {
         const mainList = document.getElementById('main-list');
         const sideList = document.getElementById('side-list');
         const mainSection = document.getElementById('main-section');
@@ -131,11 +174,10 @@
 
         mainList.innerHTML = '';
         sideList.innerHTML = '';
-        
         let hasMain = false;
         let hasSide = false;
 
-        newTasks.forEach(task => {
+        tasks.forEach(task => {
             const isSide = task.type === 'side';
             const li = document.createElement('li');
             li.id = `task-${task.id}`;
@@ -143,7 +185,6 @@
             if (task.done) li.classList.add('done');
             
             li.onclick = () => toggleTaskStatus(task);
-
             const markerChar = isSide ? '◇' : '◆'; 
 
             li.innerHTML = `
@@ -151,37 +192,28 @@
                 <span class="text">${task.text}</span>
             `;
 
-            if (isSide) {
-                sideList.appendChild(li);
-                hasSide = true;
-            } else {
-                mainList.appendChild(li);
-                hasMain = true;
-            }
+            if (isSide) { sideList.appendChild(li); hasSide = true; } 
+            else { mainList.appendChild(li); hasMain = true; }
         });
 
-        // إخفاء الأقسام الفارغة
         mainSection.style.display = hasMain ? 'block' : 'none';
         sideSection.style.display = hasSide ? 'block' : 'none';
-
-        currentTasks = newTasks;
     }
 
     async function toggleTaskStatus(task) {
-        // عند النقر يدوياً، أظهر القائمة (لأن المشاهد قد يريد رؤيتها وهي تختفي)
-        wakeUpHud();
+        triggerManualUpdate(); // عند التفاعل اليدوي، أظهر القائمة
 
-        task.done = !task.done;
-        const idx = currentTasks.findIndex(t => t.id === task.id);
-        if(idx > -1) currentTasks[idx] = task;
-        
+        const taskIndex = currentData.tasks.findIndex(t => t.id === task.id);
+        if(taskIndex > -1) {
+            currentData.tasks[taskIndex].done = !currentData.tasks[taskIndex].done;
+        }
+
         try {
             await fetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(currentTasks)
+                body: JSON.stringify(currentData)
             });
-            updateList([...currentTasks]);
         } catch(e) { console.error(e); }
     }
 
