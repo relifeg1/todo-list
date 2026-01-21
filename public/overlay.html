@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>HUD Overlay AR</title>
+    <title>HUD Overlay AR - Auto Hide</title>
     <link href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700;800&display=swap" rel="stylesheet">
     
     <style>
@@ -14,99 +14,59 @@
             color: white;
             display: flex;
             flex-direction: column;
-            align-items: flex-start; /* محاذاة لليمين تلقائياً بسبب dir=rtl */
+            align-items: flex-start; 
         }
 
         .hud-wrapper {
             width: 450px;
-            /* خط التجميع على اليمين ليناسب العربية */
             border-right: 3px solid rgba(255, 255, 255, 0.15);
-            padding-right: 20px; 
+            padding-right: 20px;
+            
+            /* --- إعدادات الإخفاء --- */
+            opacity: 0; /* مخفي افتراضياً */
+            transform: translateX(20px); /* إزاحة بسيطة */
+            transition: all 1s cubic-bezier(0.23, 1, 0.32, 1); /* حركة ناعمة جداً */
         }
 
-        /* --- العناوين (Headers) --- */
+        /* كلاس الظهور */
+        .hud-visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* --- العناوين --- */
         .section-title {
-            font-size: 16px;
-            margin-bottom: 8px;
-            margin-top: 20px;
-            opacity: 0.9;
-            font-weight: 800; /* وزن ثقيل للعنوان */
-            display: flex;
-            align-items: center;
+            font-size: 16px; margin-bottom: 8px; margin-top: 20px;
+            opacity: 0.9; font-weight: 800; display: flex; align-items: center;
         }
 
-        /* تنسيق العنوان الرئيسي */
-        .title-main { 
-            color: #ff9800; 
-            text-shadow: 0 0 15px rgba(255, 152, 0, 0.5); 
-        }
-        
-        /* تنسيق العنوان الجانبي */
-        .title-side { 
-            color: #00bcd4; 
-            text-shadow: 0 0 15px rgba(0, 188, 212, 0.5); 
-            margin-top: 30px; 
-        }
+        .title-main { color: #ff9800; text-shadow: 0 0 15px rgba(255, 152, 0, 0.5); }
+        .title-side { color: #00bcd4; text-shadow: 0 0 15px rgba(0, 188, 212, 0.5); margin-top: 30px; }
 
         ul { list-style: none; padding: 0; margin: 0; }
 
-        /* --- عناصر القائمة --- */
         li {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start; /* ترتيب العناصر من اليمين */
-            margin-bottom: 5px;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.3s;
+            display: flex; align-items: center; justify-content: flex-start;
+            margin-bottom: 5px; cursor: pointer; position: relative; transition: all 0.3s;
         }
 
-        /* أيقونة المهمة (الماسية) */
-        .marker {
-            margin-left: 12px; /* مسافة بين الأيقونة والنص */
-            font-size: 14px;
-            line-height: 0;
-            transition: all 0.3s;
-        }
+        .marker { margin-left: 12px; font-size: 14px; line-height: 0; transition: all 0.3s; }
 
-        /* تنسيق نص المهمة الرئيسية */
-        .task-main {
-            font-size: 26px; /* خط كبير وواضح للعربي */
-            font-weight: 700;
-            color: #fff;
-            text-shadow: 2px 2px 0px rgba(0,0,0,0.8); /* ظل قوي لضمان القراءة */
-            line-height: 1.4;
-        }
+        .task-main { font-size: 26px; font-weight: 700; color: #fff; text-shadow: 2px 2px 0px rgba(0,0,0,0.8); line-height: 1.4; }
         .task-main .marker { color: #ff9800; font-size: 18px; }
 
-        /* تنسيق نص المهمة الثانوية */
-        .task-side {
-            font-size: 20px;
-            font-weight: 500;
-            color: #e0e0e0;
-            padding-right: 10px; /* إزاحة بسيطة للداخل */
-        }
+        .task-side { font-size: 20px; font-weight: 500; color: #e0e0e0; padding-right: 10px; }
         .task-side .marker { color: #00bcd4; }
 
-        /* --- حالة الانتهاء --- */
         li.done { opacity: 0.5; filter: grayscale(100%); }
         li.done span.text { text-decoration: line-through; }
-        
-        /* تحول الأيقونة عند الانتهاء */
         li.done .marker { color: #4CAF50 !important; transform: scale(1.2); }
-
-        /* أنميشن الدخول (Glitch Effect بسيط) */
-        @keyframes scan-enter {
-            0% { opacity: 0; transform: translateX(20px); }
-            100% { opacity: 1; transform: translateX(0); }
-        }
-        .new-entry { animation: scan-enter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
     </style>
 </head>
 <body>
 
-<div class="hud-wrapper">
+<div id="hudContainer" class="hud-wrapper">
     <div id="main-section" style="display:none;">
         <div class="section-title title-main">/// العمليات الرئيسية</div>
         <ul id="main-list"></ul>
@@ -120,7 +80,28 @@
 
 <script>
     const API_URL = "/api/data";
+    
+    // --- إعدادات المؤقت ---
+    const AUTO_HIDE_SECONDS = 15; // عدد الثواني قبل أن تختفي القائمة (عدلها كما تحب)
+    let hideTimer = null;
+
     let currentTasks = [];
+
+    // دالة لإظهار القائمة وإعادة تشغيل المؤقت
+    function wakeUpHud() {
+        const hud = document.getElementById('hudContainer');
+        
+        // 1. إظهار القائمة
+        hud.classList.add('hud-visible');
+        
+        // 2. إلغاء أي مؤقت سابق (إذا جاء تحديث جديد قبل انتهاء الوقت)
+        if (hideTimer) clearTimeout(hideTimer);
+        
+        // 3. بدء مؤقت جديد للإخفاء
+        hideTimer = setTimeout(() => {
+            hud.classList.remove('hud-visible');
+        }, AUTO_HIDE_SECONDS * 1000);
+    }
 
     async function fetchData() {
         try {
@@ -131,6 +112,15 @@
     }
 
     function updateList(newTasks) {
+        // التحقق هل حدث تغيير يستحق إظهار القائمة؟
+        // (نقارن المصفوفة الجديدة بالقديمة كنص JSON)
+        const hasChanged = JSON.stringify(newTasks) !== JSON.stringify(currentTasks);
+        
+        // إذا تغيرت البيانات، أو كانت هذه أول مرة يشتغل فيها الكود -> أظهر القائمة
+        if (hasChanged || currentTasks.length === 0) {
+            wakeUpHud();
+        }
+
         const mainList = document.getElementById('main-list');
         const sideList = document.getElementById('side-list');
         const mainSection = document.getElementById('main-section');
@@ -149,15 +139,10 @@
             li.className = isSide ? 'task-side' : 'task-main';
             if (task.done) li.classList.add('done');
             
-            const oldTask = currentTasks.find(t => t.id === task.id);
-            if (!oldTask) li.classList.add('new-entry');
-
             li.onclick = () => toggleTaskStatus(task);
 
-            // الرمز الماسي
             const markerChar = isSide ? '◇' : '◆'; 
 
-            // ترتيب العناصر: الرمز أولاً ثم النص (بسبب RTL سيظهر الرمز يمين النص)
             li.innerHTML = `
                 <span class="marker">${markerChar}</span>
                 <span class="text">${task.text}</span>
@@ -179,6 +164,9 @@
     }
 
     async function toggleTaskStatus(task) {
+        // عند الضغط يدوياً، نعيد إيقاظ القائمة لتبقى ظاهرة
+        wakeUpHud();
+        
         task.done = !task.done;
         const idx = currentTasks.findIndex(t => t.id === task.id);
         if(idx > -1) currentTasks[idx] = task;
