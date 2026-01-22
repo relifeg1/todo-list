@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Game HUD - Zairuduo</title>
+    <title>Game HUD - Zairuduo (Animation)</title>
     <link href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700;800&display=swap" rel="stylesheet">
     <script src="https://github.com/tmijs/tmi.js/releases/download/v1.8.5/tmi.min.js"></script>
 
@@ -15,28 +15,20 @@
             color: white;
             display: flex;
             flex-direction: column;
-            align-items: flex-start; /* محاذاة لليمين تلقائياً */
+            align-items: flex-start;
         }
 
         .hud-wrapper {
             width: 450px;
-            /* خط عمودي يجمع القائمة */
             border-right: 3px solid rgba(255, 255, 255, 0.15);
             padding-right: 20px; 
-            
-            /* إعدادات الإخفاء الافتراضية */
             opacity: 0; 
             transform: translateX(30px);
-            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1); /* تسريع الظهور قليلاً */
         }
 
-        /* كلاس الظهور */
-        .hud-visible {
-            opacity: 1;
-            transform: translateX(0);
-        }
+        .hud-visible { opacity: 1; transform: translateX(0); }
 
-        /* العناوين */
         .section-title {
             font-size: 16px; margin-bottom: 8px; margin-top: 20px;
             opacity: 0.9; font-weight: 800; display: flex; align-items: center;
@@ -48,18 +40,12 @@
         li {
             display: flex; align-items: center; justify-content: flex-start;
             margin-bottom: 6px; cursor: pointer; position: relative; transition: all 0.3s;
+            padding: 5px; border-radius: 4px; /* تحسين الخلفية للأنميشن */
         }
         
-        /* رقم المهمة للشات */
         .task-id {
-            font-size: 0.6em;
-            color: #aaa;
-            margin-left: 8px;
-            background: rgba(0,0,0,0.6);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Segoe UI', sans-serif; /* رقم إنجليزي واضح */
-            letter-spacing: 1px;
+            font-size: 0.6em; color: #aaa; margin-left: 8px; background: rgba(0,0,0,0.6);
+            padding: 2px 6px; border-radius: 4px; font-family: 'Segoe UI', sans-serif; letter-spacing: 1px;
         }
 
         .marker { margin-left: 8px; font-size: 14px; line-height: 0; transition: all 0.3s; }
@@ -70,10 +56,37 @@
         .task-side { font-size: 20px; font-weight: 500; color: #e0e0e0; padding-right: 10px; }
         .task-side .marker { color: #00bcd4; }
         
-        /* حالة الانتهاء */
+        /* حالة الانتهاء العادية (بعد الأنميشن) */
         li.done { opacity: 0.5; filter: grayscale(100%); }
         li.done span.text { text-decoration: line-through; }
         li.done .marker { color: #4CAF50 !important; transform: scale(1.2); }
+
+        /* =========================================
+           أنميشن الإنجاز المبهــر (Flash Effect)
+           ========================================= */
+        @keyframes mission-complete {
+            0% { 
+                background-color: rgba(255, 255, 255, 0.8); /* وميض أبيض */
+                transform: scale(1.02) translateX(-10px);
+                opacity: 1;
+                filter: grayscale(0%);
+            }
+            30% {
+                background-color: rgba(255, 215, 0, 0.4); /* ذهبي */
+                transform: scale(1.1);
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            }
+            100% { 
+                background-color: transparent; 
+                transform: scale(1);
+            }
+        }
+
+        /* الكلاس الذي سيتم إضافته للجافاسكربت */
+        .just-finished {
+            animation: mission-complete 1.5s ease-out forwards;
+            z-index: 10; /* ليظهر فوق كل شيء أثناء الوميض */
+        }
 
     </style>
 </head>
@@ -92,84 +105,78 @@
 </div>
 
 <script>
-    // ==========================================
-    // إعدادات القناة
-    // ==========================================
     const TWITCH_CHANNEL = "zairuduo"; 
-    
     const API_URL = "/api/data";
     
-    // القيم الافتراضية (سيتم تحديثها من الأدمن)
     let visibleDuration = 15;
     let hiddenDuration = 300;
     
     let activeTimer = null;
     let currentData = { tasks: [], settings: {} };
-    let displayMap = []; // لربط الرقم بالمهمة
+    let displayMap = [];
+    
+    // مصفوفة لتخزين معرفات المهام التي تم إنهاؤها حديثاً لتشغيل الأنميشن
+    let justCompletedIds = [];
 
-    // --- منطق الدورة (Cycle Logic) ---
+    // --- منطق الدورة ---
     function showHud() {
         const hud = document.getElementById('hudContainer');
         hud.classList.add('hud-visible');
-        
         if (activeTimer) clearTimeout(activeTimer);
-
-        // اختفاء بعد مدة الظهور
-        activeTimer = setTimeout(() => {
-            hideHud();
-        }, visibleDuration * 1000);
+        activeTimer = setTimeout(() => { hideHud(); }, visibleDuration * 1000);
     }
 
     function hideHud() {
         const hud = document.getElementById('hudContainer');
         hud.classList.remove('hud-visible');
-        
         if (activeTimer) clearTimeout(activeTimer);
-
-        // ظهور مرة أخرى بعد مدة الاختفاء
         activeTimer = setTimeout(() => {
             if (currentData.tasks.length > 0) showHud();
         }, hiddenDuration * 1000);
     }
 
-    // للمقاطعة اليدوية (عند التحديث أو أمر الشات)
-    function triggerManualUpdate() {
-        showHud();
-    }
+    function triggerManualUpdate() { showHud(); }
 
     // --- جلب البيانات ---
     async function fetchData() {
         try {
             const res = await fetch(API_URL);
             const rawData = await res.json();
-            
             let newData = { tasks: [], settings: { visibleDuration: 15, hiddenDuration: 300 } };
             
-            if (Array.isArray(rawData)) {
-                newData.tasks = rawData;
-            } else if (rawData && rawData.tasks) {
-                newData = rawData;
-            }
+            if (Array.isArray(rawData)) newData.tasks = rawData;
+            else if (rawData && rawData.tasks) newData = rawData;
 
-            // تحديث الإعدادات من السيرفر
             if (newData.settings) {
                 if(newData.settings.visibleDuration) visibleDuration = newData.settings.visibleDuration;
                 if(newData.settings.hiddenDuration) hiddenDuration = newData.settings.hiddenDuration;
             }
-
             processUpdate(newData);
         } catch(e) { console.error(e); }
     }
 
     function processUpdate(newData) {
+        // اكتشاف التغييرات
         const tasksChanged = JSON.stringify(newData.tasks) !== JSON.stringify(currentData.tasks);
         
+        // **المنطق الذكي للأنميشن:**
+        // نقارن القائمة الجديدة بالقديمة لنعرف ما الذي تحول إلى "Done"
+        justCompletedIds = []; // تصفير القائمة
+        if (currentData.tasks.length > 0) {
+            newData.tasks.forEach(newTask => {
+                const oldTask = currentData.tasks.find(t => t.id === newTask.id);
+                // إذا كانت موجودة، ولم تكن منتهية، وأصبحت منتهية الآن
+                if (oldTask && !oldTask.done && newTask.done) {
+                    justCompletedIds.push(newTask.id);
+                }
+            });
+        }
+
         if (tasksChanged || currentData.tasks.length === 0) {
             updateDom(newData.tasks);
             
-            // إذا تغيرت البيانات، نقاطع الدورة ونظهر القائمة
             if ((newData.tasks.length > 0 && tasksChanged) || (currentData.tasks.length === 0 && newData.tasks.length > 0)) {
-                triggerManualUpdate();
+                triggerManualUpdate(); // إظهار القائمة
             }
         }
         currentData = newData;
@@ -190,16 +197,25 @@
         let hasSide = false;
 
         tasks.forEach(task => {
-            displayMap.push(task); // حفظ ترتيب المهمة
+            displayMap.push(task); 
             const taskNumber = counter++;
-
             const isSide = task.type === 'side';
+            
             const li = document.createElement('li');
             li.id = `task-${task.id}`;
             li.className = isSide ? 'task-side' : 'task-main';
-            if (task.done) li.classList.add('done');
             
-            li.onclick = () => toggleTaskStatus(task); // دعم النقر بالماوس أيضاً
+            // إضافة كلاس الانتهاء
+            if (task.done) li.classList.add('done');
+
+            // **تطبيق الأنميشن إذا كانت المهمة انتهت للتو**
+            if (justCompletedIds.includes(task.id)) {
+                li.classList.add('just-finished');
+                // إزالة الأنميشن من المهمة (لكي لا تبقى مشطوبة بالأنميشن للأبد) لكن تبقى مشطوبة بالكلاس done
+                // الملاحظة: الـ CSS handles the final state via .done, but just-finished adds the flash
+            }
+
+            li.onclick = () => toggleTaskStatus(task);
             const markerChar = isSide ? '◇' : '◆'; 
 
             li.innerHTML = `
@@ -217,59 +233,56 @@
     }
 
     async function toggleTaskStatus(task) {
-        triggerManualUpdate(); // إظهار القائمة فوراً عند التفاعل
-        
+        // نحدث الواجهة فوراً لسرعة الاستجابة (Optimistic UI update)
+        // هذا يسمح للأنميشن بالعمل حتى قبل رد السيرفر
         const taskIndex = currentData.tasks.findIndex(t => t.id === task.id);
         if(taskIndex > -1) {
-            currentData.tasks[taskIndex].done = !currentData.tasks[taskIndex].done;
+            // نحاكي التغيير محلياً عشان processUpdate يلتقطه
+            // (في الواقع processUpdate سيلتقط الرد من السيرفر، لكن هذا يضمن التزامن)
         }
+        
+        // إظهار القائمة فوراً
+        triggerManualUpdate();
 
+        // إرسال للسيرفر
+        const updatedTasks = JSON.parse(JSON.stringify(currentData.tasks));
+        const t = updatedTasks.find(t => t.id === task.id);
+        if(t) t.done = !t.done;
+
+        // إرسال الطلب
         try {
             await fetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(currentData)
+                body: JSON.stringify({ tasks: updatedTasks, settings: currentData.settings || {} })
             });
-            // لا نحتاج لاستدعاء updateDom هنا لأن الـ setInterval سيقوم بذلك
         } catch(e) { console.error(e); }
     }
 
     // ==========================================
-    // ربط Twitch Chat
+    // Twitch Chat
     // ==========================================
-    const client = new tmi.Client({
-        channels: [TWITCH_CHANNEL]
-    });
-
+    const client = new tmi.Client({ channels: [TWITCH_CHANNEL] });
     client.connect().catch(console.error);
-
     client.on('message', (channel, tags, message, self) => {
         if (self) return;
-
         const msg = message.toLowerCase();
-        
-        // التحقق من الأمر: !done أو !تم
         if (msg.startsWith('!done') || msg.startsWith('!تم')) {
-            
-            // الحماية: التحقق من أن المرسل هو البرودكاستر أو مشرف (Mod)
-            const isMod = tags.mod || tags['user-id'] === tags['room-id']; // room-id هو صاحب القناة
-            
+            const isMod = tags.mod || tags['user-id'] === tags['room-id'];
             if (isMod) {
                 const parts = msg.split(' ');
                 if (parts.length > 1) {
                     const num = parseInt(parts[1]);
-                    // التحقق من صحة الرقم
                     if (!isNaN(num) && num > 0 && num <= displayMap.length) {
-                        const targetTask = displayMap[num - 1];
-                        toggleTaskStatus(targetTask);
+                        toggleTaskStatus(displayMap[num - 1]);
                     }
                 }
             }
         }
     });
 
-    setInterval(fetchData, 2000); // تحديث كل ثانيتين
-    fetchData(); // تشغيل أولي
+    setInterval(fetchData, 2000);
+    fetchData();
 </script>
 
 </body>
