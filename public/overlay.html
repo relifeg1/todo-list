@@ -2,9 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>HUD Overlay Cyclic</title>
+    <title>Game HUD - Zairuduo</title>
     <link href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700;800&display=swap" rel="stylesheet">
-    
+    <script src="https://github.com/tmijs/tmi.js/releases/download/v1.8.5/tmi.min.js"></script>
+
     <style>
         body { 
             font-family: 'Changa', sans-serif; 
@@ -14,26 +15,28 @@
             color: white;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            align-items: flex-start; /* محاذاة لليمين تلقائياً */
         }
 
         .hud-wrapper {
             width: 450px;
+            /* خط عمودي يجمع القائمة */
             border-right: 3px solid rgba(255, 255, 255, 0.15);
             padding-right: 20px; 
             
-            /* إعدادات الإخفاء */
+            /* إعدادات الإخفاء الافتراضية */
             opacity: 0; 
             transform: translateX(30px);
             transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
+        /* كلاس الظهور */
         .hud-visible {
             opacity: 1;
             transform: translateX(0);
         }
 
-        /* العناوين والقائمة */
+        /* العناوين */
         .section-title {
             font-size: 16px; margin-bottom: 8px; margin-top: 20px;
             opacity: 0.9; font-weight: 800; display: flex; align-items: center;
@@ -44,13 +47,30 @@
         ul { list-style: none; padding: 0; margin: 0; }
         li {
             display: flex; align-items: center; justify-content: flex-start;
-            margin-bottom: 5px; cursor: pointer; position: relative; transition: all 0.3s;
+            margin-bottom: 6px; cursor: pointer; position: relative; transition: all 0.3s;
         }
-        .marker { margin-left: 12px; font-size: 14px; line-height: 0; transition: all 0.3s; }
+        
+        /* رقم المهمة للشات */
+        .task-id {
+            font-size: 0.6em;
+            color: #aaa;
+            margin-left: 8px;
+            background: rgba(0,0,0,0.6);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Segoe UI', sans-serif; /* رقم إنجليزي واضح */
+            letter-spacing: 1px;
+        }
+
+        .marker { margin-left: 8px; font-size: 14px; line-height: 0; transition: all 0.3s; }
+        
         .task-main { font-size: 26px; font-weight: 700; color: #fff; text-shadow: 2px 2px 0px rgba(0,0,0,0.8); line-height: 1.4; }
         .task-main .marker { color: #ff9800; font-size: 18px; }
+        
         .task-side { font-size: 20px; font-weight: 500; color: #e0e0e0; padding-right: 10px; }
         .task-side .marker { color: #00bcd4; }
+        
+        /* حالة الانتهاء */
         li.done { opacity: 0.5; filter: grayscale(100%); }
         li.done span.text { text-decoration: line-through; }
         li.done .marker { color: #4CAF50 !important; transform: scale(1.2); }
@@ -72,55 +92,52 @@
 </div>
 
 <script>
+    // ==========================================
+    // إعدادات القناة
+    // ==========================================
+    const TWITCH_CHANNEL = "zairuduo"; 
+    
     const API_URL = "/api/data";
     
-    // متغيرات الدورة الزمنية
-    let visibleDuration = 15; // ثانية
-    let hiddenDuration = 300; // ثانية
+    // القيم الافتراضية (سيتم تحديثها من الأدمن)
+    let visibleDuration = 15;
+    let hiddenDuration = 300;
     
-    let activeTimer = null; // يحفظ المؤقت الحالي (سواء للإخفاء أو للإظهار)
-
+    let activeTimer = null;
     let currentData = { tasks: [], settings: {} };
+    let displayMap = []; // لربط الرقم بالمهمة
 
     // --- منطق الدورة (Cycle Logic) ---
-
-    // 1. دالة الإظهار (تبدأ دورة الظهور)
     function showHud() {
         const hud = document.getElementById('hudContainer');
         hud.classList.add('hud-visible');
         
-        // تنظيف أي مؤقت سابق
         if (activeTimer) clearTimeout(activeTimer);
 
-        // بعد انتهاء وقت الظهور -> اخفِ القائمة
+        // اختفاء بعد مدة الظهور
         activeTimer = setTimeout(() => {
             hideHud();
         }, visibleDuration * 1000);
     }
 
-    // 2. دالة الإخفاء (تبدأ دورة الانتظار)
     function hideHud() {
         const hud = document.getElementById('hudContainer');
         hud.classList.remove('hud-visible');
         
         if (activeTimer) clearTimeout(activeTimer);
 
-        // بعد انتهاء وقت الانتظار -> اظهر القائمة مرة أخرى (تكرار)
+        // ظهور مرة أخرى بعد مدة الاختفاء
         activeTimer = setTimeout(() => {
-            // شرط: لا تظهر القائمة الفارغة
-            if (currentData.tasks.length > 0) {
-                showHud();
-            }
+            if (currentData.tasks.length > 0) showHud();
         }, hiddenDuration * 1000);
     }
 
-    // 3. دالة المقاطعة (Trigger): تستدعى عند تحديث البيانات يدوياً
+    // للمقاطعة اليدوية (عند التحديث أو أمر الشات)
     function triggerManualUpdate() {
-        // نقطع الدورة الحالية ونظهر القائمة فوراً
         showHud();
     }
 
-
+    // --- جلب البيانات ---
     async function fetchData() {
         try {
             const res = await fetch(API_URL);
@@ -141,28 +158,20 @@
             }
 
             processUpdate(newData);
-
         } catch(e) { console.error(e); }
     }
 
     function processUpdate(newData) {
-        // فحص التغييرات في المهام
         const tasksChanged = JSON.stringify(newData.tasks) !== JSON.stringify(currentData.tasks);
         
-        // تحديث DOM
         if (tasksChanged || currentData.tasks.length === 0) {
             updateDom(newData.tasks);
             
-            // إذا تغيرت المهام وكان هناك مهام فعلاً -> قاطع الدورة وأظهر القائمة
-            if (newData.tasks.length > 0 && tasksChanged) {
-                triggerManualUpdate();
-            }
-            // إذا كانت أول مرة تشغيل للصفحة وفيها مهام -> ابدأ الدورة
-            else if (currentData.tasks.length === 0 && newData.tasks.length > 0) {
+            // إذا تغيرت البيانات، نقاطع الدورة ونظهر القائمة
+            if ((newData.tasks.length > 0 && tasksChanged) || (currentData.tasks.length === 0 && newData.tasks.length > 0)) {
                 triggerManualUpdate();
             }
         }
-
         currentData = newData;
     }
 
@@ -174,20 +183,27 @@
 
         mainList.innerHTML = '';
         sideList.innerHTML = '';
+        displayMap = []; 
+
+        let counter = 1;
         let hasMain = false;
         let hasSide = false;
 
         tasks.forEach(task => {
+            displayMap.push(task); // حفظ ترتيب المهمة
+            const taskNumber = counter++;
+
             const isSide = task.type === 'side';
             const li = document.createElement('li');
             li.id = `task-${task.id}`;
             li.className = isSide ? 'task-side' : 'task-main';
             if (task.done) li.classList.add('done');
             
-            li.onclick = () => toggleTaskStatus(task);
+            li.onclick = () => toggleTaskStatus(task); // دعم النقر بالماوس أيضاً
             const markerChar = isSide ? '◇' : '◆'; 
 
             li.innerHTML = `
+                <span class="task-id">[${taskNumber}]</span>
                 <span class="marker">${markerChar}</span>
                 <span class="text">${task.text}</span>
             `;
@@ -201,8 +217,8 @@
     }
 
     async function toggleTaskStatus(task) {
-        triggerManualUpdate(); // عند التفاعل اليدوي، أظهر القائمة
-
+        triggerManualUpdate(); // إظهار القائمة فوراً عند التفاعل
+        
         const taskIndex = currentData.tasks.findIndex(t => t.id === task.id);
         if(taskIndex > -1) {
             currentData.tasks[taskIndex].done = !currentData.tasks[taskIndex].done;
@@ -214,11 +230,46 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(currentData)
             });
+            // لا نحتاج لاستدعاء updateDom هنا لأن الـ setInterval سيقوم بذلك
         } catch(e) { console.error(e); }
     }
 
-    setInterval(fetchData, 2000);
-    fetchData();
+    // ==========================================
+    // ربط Twitch Chat
+    // ==========================================
+    const client = new tmi.Client({
+        channels: [TWITCH_CHANNEL]
+    });
+
+    client.connect().catch(console.error);
+
+    client.on('message', (channel, tags, message, self) => {
+        if (self) return;
+
+        const msg = message.toLowerCase();
+        
+        // التحقق من الأمر: !done أو !تم
+        if (msg.startsWith('!done') || msg.startsWith('!تم')) {
+            
+            // الحماية: التحقق من أن المرسل هو البرودكاستر أو مشرف (Mod)
+            const isMod = tags.mod || tags['user-id'] === tags['room-id']; // room-id هو صاحب القناة
+            
+            if (isMod) {
+                const parts = msg.split(' ');
+                if (parts.length > 1) {
+                    const num = parseInt(parts[1]);
+                    // التحقق من صحة الرقم
+                    if (!isNaN(num) && num > 0 && num <= displayMap.length) {
+                        const targetTask = displayMap[num - 1];
+                        toggleTaskStatus(targetTask);
+                    }
+                }
+            }
+        }
+    });
+
+    setInterval(fetchData, 2000); // تحديث كل ثانيتين
+    fetchData(); // تشغيل أولي
 </script>
 
 </body>
