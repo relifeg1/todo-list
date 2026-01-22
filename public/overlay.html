@@ -2,37 +2,43 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Game HUD - Zairuduo (Animation)</title>
+    <title>HUD Overlay Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700;800&display=swap" rel="stylesheet">
     <script src="https://github.com/tmijs/tmi.js/releases/download/v1.8.5/tmi.min.js"></script>
 
     <style>
         body { 
-            font-family: 'Changa', sans-serif; 
-            margin: 0; padding: 25px; 
-            background-color: transparent; 
-            overflow: hidden; 
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
+            font-family: 'Changa', sans-serif; margin: 0; padding: 25px; 
+            background-color: transparent; overflow: hidden; color: white;
+            display: flex; flex-direction: column; align-items: flex-start;
         }
 
         .hud-wrapper {
             width: 450px;
             border-right: 3px solid rgba(255, 255, 255, 0.15);
             padding-right: 20px; 
-            opacity: 0; 
-            transform: translateX(30px);
-            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1); /* تسريع الظهور قليلاً */
+            opacity: 0; transform: translateX(30px);
+            transition: opacity 0.5s ease, transform 0.5s ease; /* حركة افتراضية ناعمة */
         }
 
         .hud-visible { opacity: 1; transform: translateX(0); }
 
-        .section-title {
-            font-size: 16px; margin-bottom: 8px; margin-top: 20px;
-            opacity: 0.9; font-weight: 800; display: flex; align-items: center;
+        /* --- تأثير الغليتش (يُفعل بالكلاس) --- */
+        .glitch-active .hud-wrapper.hud-visible {
+            animation: glitch-anim 0.4s cubic-bezier(.25, .46, .45, .94) both;
         }
+
+        @keyframes glitch-anim {
+            0% { transform: translate(0); opacity: 0; }
+            20% { transform: translate(-5px, 5px); opacity: 1; }
+            40% { transform: translate(5px, -5px); }
+            60% { transform: translate(-5px, 5px); }
+            80% { transform: translate(5px, -5px); }
+            100% { transform: translate(0); opacity: 1; }
+        }
+
+        /* العناوين */
+        .section-title { font-size: 16px; margin-bottom: 8px; margin-top: 20px; opacity: 0.9; font-weight: 800; display: flex; align-items: center; }
         .title-main { color: #ff9800; text-shadow: 0 0 15px rgba(255, 152, 0, 0.5); }
         .title-side { color: #00bcd4; text-shadow: 0 0 15px rgba(0, 188, 212, 0.5); margin-top: 30px; }
 
@@ -40,57 +46,51 @@
         li {
             display: flex; align-items: center; justify-content: flex-start;
             margin-bottom: 6px; cursor: pointer; position: relative; transition: all 0.3s;
-            padding: 5px; border-radius: 4px; /* تحسين الخلفية للأنميشن */
-        }
-        
-        .task-id {
-            font-size: 0.6em; color: #aaa; margin-left: 8px; background: rgba(0,0,0,0.6);
-            padding: 2px 6px; border-radius: 4px; font-family: 'Segoe UI', sans-serif; letter-spacing: 1px;
+            padding: 5px; border-radius: 4px;
         }
 
+        .task-id { font-size: 0.6em; color: #aaa; margin-left: 8px; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px; font-family: sans-serif; }
         .marker { margin-left: 8px; font-size: 14px; line-height: 0; transition: all 0.3s; }
         
+        /* النصوص */
         .task-main { font-size: 26px; font-weight: 700; color: #fff; text-shadow: 2px 2px 0px rgba(0,0,0,0.8); line-height: 1.4; }
         .task-main .marker { color: #ff9800; font-size: 18px; }
-        
         .task-side { font-size: 20px; font-weight: 500; color: #e0e0e0; padding-right: 10px; }
         .task-side .marker { color: #00bcd4; }
         
-        /* حالة الانتهاء العادية (بعد الأنميشن) */
+        /* العداد */
+        .timer-display {
+            font-family: 'Courier New', monospace; font-size: 0.7em; color: #ffeb3b;
+            background: rgba(0,0,0,0.7); padding: 2px 6px; border-radius: 3px;
+            margin-right: 10px; letter-spacing: 1px;
+        }
+
+        /* حالة الانتهاء */
         li.done { opacity: 0.5; filter: grayscale(100%); }
         li.done span.text { text-decoration: line-through; }
         li.done .marker { color: #4CAF50 !important; transform: scale(1.2); }
 
-        /* =========================================
-           أنميشن الإنجاز المبهــر (Flash Effect)
-           ========================================= */
+        /* أنميشن الوميض عند الانتهاء */
         @keyframes mission-complete {
-            0% { 
-                background-color: rgba(255, 255, 255, 0.8); /* وميض أبيض */
-                transform: scale(1.02) translateX(-10px);
-                opacity: 1;
-                filter: grayscale(0%);
-            }
-            30% {
-                background-color: rgba(255, 215, 0, 0.4); /* ذهبي */
-                transform: scale(1.1);
-                box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-            }
-            100% { 
-                background-color: transparent; 
-                transform: scale(1);
-            }
+            0% { background-color: rgba(255, 255, 255, 0.8); transform: scale(1.02); }
+            50% { background-color: rgba(255, 215, 0, 0.4); transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+            100% { background-color: transparent; transform: scale(1); }
         }
+        .just-finished { animation: mission-complete 1.5s ease-out forwards; }
 
-        /* الكلاس الذي سيتم إضافته للجافاسكربت */
-        .just-finished {
-            animation: mission-complete 1.5s ease-out forwards;
-            z-index: 10; /* ليظهر فوق كل شيء أثناء الوميض */
+        /* جزيئات الاحتفال (Confetti) */
+        .confetti {
+            position: absolute; width: 8px; height: 8px; background-color: #f00;
+            animation: confetti-fall 2s linear forwards; pointer-events: none;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
         }
 
     </style>
 </head>
-<body>
+<body id="bodyEl">
 
 <div id="hudContainer" class="hud-wrapper">
     <div id="main-section" style="display:none;">
@@ -104,68 +104,71 @@
     </div>
 </div>
 
+<audio id="successSound" src="success.mp3"></audio>
+
 <script>
     const TWITCH_CHANNEL = "zairuduo"; 
     const API_URL = "/api/data";
     
-    let visibleDuration = 15;
-    let hiddenDuration = 300;
+    let config = { 
+        visibleDuration: 15, hiddenDuration: 300, 
+        enableGlitch: true, enableParticles: true 
+    };
     
     let activeTimer = null;
     let currentData = { tasks: [], settings: {} };
     let displayMap = [];
-    
-    // مصفوفة لتخزين معرفات المهام التي تم إنهاؤها حديثاً لتشغيل الأنميشن
     let justCompletedIds = [];
+    let tasksWithTimer = []; // لتخزين المهام التي تحتاج تحديث عداد
 
-    // --- منطق الدورة ---
     function showHud() {
         const hud = document.getElementById('hudContainer');
+        const body = document.getElementById('bodyEl');
+        
+        // تفعيل الغليتش فقط إذا كان مفعلاً في الإعدادات
+        if(config.enableGlitch) body.classList.add('glitch-active');
+        else body.classList.remove('glitch-active');
+
         hud.classList.add('hud-visible');
         if (activeTimer) clearTimeout(activeTimer);
-        activeTimer = setTimeout(() => { hideHud(); }, visibleDuration * 1000);
+        activeTimer = setTimeout(hideHud, config.visibleDuration * 1000);
     }
 
     function hideHud() {
-        const hud = document.getElementById('hudContainer');
-        hud.classList.remove('hud-visible');
+        document.getElementById('hudContainer').classList.remove('hud-visible');
         if (activeTimer) clearTimeout(activeTimer);
         activeTimer = setTimeout(() => {
             if (currentData.tasks.length > 0) showHud();
-        }, hiddenDuration * 1000);
+        }, config.hiddenDuration * 1000);
     }
 
     function triggerManualUpdate() { showHud(); }
 
-    // --- جلب البيانات ---
     async function fetchData() {
         try {
             const res = await fetch(API_URL);
             const rawData = await res.json();
-            let newData = { tasks: [], settings: { visibleDuration: 15, hiddenDuration: 300 } };
             
-            if (Array.isArray(rawData)) newData.tasks = rawData;
-            else if (rawData && rawData.tasks) newData = rawData;
+            let newData = { tasks: [], settings: {} };
+            if (rawData && !Array.isArray(rawData)) newData = rawData;
+            else if (Array.isArray(rawData)) newData.tasks = rawData;
 
+            // تحديث الإعدادات المحلية
             if (newData.settings) {
-                if(newData.settings.visibleDuration) visibleDuration = newData.settings.visibleDuration;
-                if(newData.settings.hiddenDuration) hiddenDuration = newData.settings.hiddenDuration;
+                config = { ...config, ...newData.settings };
             }
+
             processUpdate(newData);
         } catch(e) { console.error(e); }
     }
 
     function processUpdate(newData) {
-        // اكتشاف التغييرات
         const tasksChanged = JSON.stringify(newData.tasks) !== JSON.stringify(currentData.tasks);
         
-        // **المنطق الذكي للأنميشن:**
-        // نقارن القائمة الجديدة بالقديمة لنعرف ما الذي تحول إلى "Done"
-        justCompletedIds = []; // تصفير القائمة
+        justCompletedIds = [];
         if (currentData.tasks.length > 0) {
             newData.tasks.forEach(newTask => {
                 const oldTask = currentData.tasks.find(t => t.id === newTask.id);
-                // إذا كانت موجودة، ولم تكن منتهية، وأصبحت منتهية الآن
                 if (oldTask && !oldTask.done && newTask.done) {
                     justCompletedIds.push(newTask.id);
                 }
@@ -174,9 +177,8 @@
 
         if (tasksChanged || currentData.tasks.length === 0) {
             updateDom(newData.tasks);
-            
             if ((newData.tasks.length > 0 && tasksChanged) || (currentData.tasks.length === 0 && newData.tasks.length > 0)) {
-                triggerManualUpdate(); // إظهار القائمة
+                triggerManualUpdate();
             }
         }
         currentData = newData;
@@ -191,6 +193,7 @@
         mainList.innerHTML = '';
         sideList.innerHTML = '';
         displayMap = []; 
+        tasksWithTimer = []; // تصفير قائمة المؤقتات
 
         let counter = 1;
         let hasMain = false;
@@ -200,28 +203,38 @@
             displayMap.push(task); 
             const taskNumber = counter++;
             const isSide = task.type === 'side';
-            
             const li = document.createElement('li');
             li.id = `task-${task.id}`;
             li.className = isSide ? 'task-side' : 'task-main';
-            
-            // إضافة كلاس الانتهاء
             if (task.done) li.classList.add('done');
 
-            // **تطبيق الأنميشن إذا كانت المهمة انتهت للتو**
+            // --- منطق الأنميشن والصوت ---
             if (justCompletedIds.includes(task.id)) {
                 li.classList.add('just-finished');
-                // إزالة الأنميشن من المهمة (لكي لا تبقى مشطوبة بالأنميشن للأبد) لكن تبقى مشطوبة بالكلاس done
-                // الملاحظة: الـ CSS handles the final state via .done, but just-finished adds the flash
+                
+                // تشغيل الجزيئات فقط إذا مفعلة
+                if(config.enableParticles) spawnParticles(li);
+                
+                // تشغيل الصوت
+                const audio = document.getElementById("successSound");
+                if(audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
             }
 
             li.onclick = () => toggleTaskStatus(task);
             const markerChar = isSide ? '◇' : '◆'; 
 
+            // --- بناء HTML ---
+            let timerHtml = '';
+            if(task.hasTimer) {
+                timerHtml = `<span id="timer-${task.id}" class="timer-display">00:00</span>`;
+                tasksWithTimer.push(task); // إضافته لقائمة التحديث المستمر
+            }
+
             li.innerHTML = `
                 <span class="task-id">[${taskNumber}]</span>
                 <span class="marker">${markerChar}</span>
                 <span class="text">${task.text}</span>
+                ${timerHtml}
             `;
 
             if (isSide) { sideList.appendChild(li); hasSide = true; } 
@@ -230,38 +243,80 @@
 
         mainSection.style.display = hasMain ? 'block' : 'none';
         sideSection.style.display = hasSide ? 'block' : 'none';
+        
+        // تحديث أولي للأوقات
+        updateTimers();
+    }
+
+    // --- دالة تحديث عدادات الوقت (Speedrun) ---
+    function updateTimers() {
+        const now = Date.now();
+        tasksWithTimer.forEach(task => {
+            const el = document.getElementById(`timer-${task.id}`);
+            if(!el) return;
+
+            let diff;
+            if (task.done) {
+                // إذا انتهت، استخدم وقت النهاية المحفوظ أو الوقت الحالي لو لم يحفظ
+                diff = (task.timerEnd || now) - task.timerStart;
+            } else {
+                diff = now - task.timerStart;
+            }
+            
+            // تحويل الميلي ثانية إلى MM:SS
+            const seconds = Math.floor((diff / 1000) % 60);
+            const minutes = Math.floor((diff / 1000 / 60));
+            
+            const str = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            el.innerText = str;
+        });
+    }
+
+    // تشغيل تحديث العدادات كل ثانية بشكل مستقل
+    setInterval(updateTimers, 1000);
+
+
+    // --- نظام الجزيئات (Particles) الخفيف ---
+    function spawnParticles(element) {
+        const rect = element.getBoundingClientRect();
+        const colors = ['#ff9800', '#00bcd4', '#4CAF50', '#ffffff'];
+        
+        for (let i = 0; i < 20; i++) {
+            const p = document.createElement('div');
+            p.classList.add('confetti');
+            p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            p.style.left = (rect.left + Math.random() * rect.width) + 'px';
+            p.style.top = (rect.top + rect.height / 2) + 'px';
+            document.body.appendChild(p);
+            
+            setTimeout(() => p.remove(), 2000);
+        }
     }
 
     async function toggleTaskStatus(task) {
-        // نحدث الواجهة فوراً لسرعة الاستجابة (Optimistic UI update)
-        // هذا يسمح للأنميشن بالعمل حتى قبل رد السيرفر
+        triggerManualUpdate();
+        
         const taskIndex = currentData.tasks.findIndex(t => t.id === task.id);
         if(taskIndex > -1) {
-            // نحاكي التغيير محلياً عشان processUpdate يلتقطه
-            // (في الواقع processUpdate سيلتقط الرد من السيرفر، لكن هذا يضمن التزامن)
+            currentData.tasks[taskIndex].done = !currentData.tasks[taskIndex].done;
+            // إيقاف المؤقت عند النهاية
+            if(currentData.tasks[taskIndex].done && currentData.tasks[taskIndex].hasTimer) {
+                currentData.tasks[taskIndex].timerEnd = Date.now();
+            } else {
+                currentData.tasks[taskIndex].timerEnd = null;
+            }
         }
-        
-        // إظهار القائمة فوراً
-        triggerManualUpdate();
 
-        // إرسال للسيرفر
-        const updatedTasks = JSON.parse(JSON.stringify(currentData.tasks));
-        const t = updatedTasks.find(t => t.id === task.id);
-        if(t) t.done = !t.done;
-
-        // إرسال الطلب
         try {
             await fetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tasks: updatedTasks, settings: currentData.settings || {} })
+                body: JSON.stringify(currentData)
             });
         } catch(e) { console.error(e); }
     }
 
-    // ==========================================
-    // Twitch Chat
-    // ==========================================
+    // --- Twitch Chat ---
     const client = new tmi.Client({ channels: [TWITCH_CHANNEL] });
     client.connect().catch(console.error);
     client.on('message', (channel, tags, message, self) => {

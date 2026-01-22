@@ -3,106 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>غرفة العمليات - Admin</title>
+    <title>غرفة العمليات - Admin Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
         body { font-family: 'Changa', sans-serif; background: #0f0f0f; color: #eee; padding: 20px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 650px; background: #1a1a1a; padding: 25px; border-radius: 4px; border: 1px solid #333; }
-        h2 { text-align: center; color: #ff9800; margin-bottom: 25px; font-weight: 800; font-size: 24px; }
+        .container { width: 100%; max-width: 700px; background: #1a1a1a; padding: 25px; border-radius: 6px; border: 1px solid #333; }
+        h2 { text-align: center; color: #ff9800; margin-bottom: 25px; font-weight: 800; }
         
-        /* قسم الإعدادات */
-        .settings-bar {
-            background: #252525;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-            border: 1px solid #444;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        /* --- قسم الإعدادات العامة --- */
+        .settings-panel {
+            background: #252525; padding: 15px; margin-bottom: 25px;
+            border-radius: 4px; border: 1px solid #444; display: grid; gap: 10px;
         }
-        .setting-row { display: flex; justify-content: space-between; align-items: center; }
-        .setting-row label { font-size: 0.9em; color: #aaa; }
-        .setting-row input { width: 70px; text-align: center; padding: 5px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px; }
-
-        .input-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;}
+        .settings-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .settings-group { display: flex; gap: 15px; align-items: center; }
         
-        input, select { padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; outline: none; font-family: 'Changa'; }
-        input[type="text"] { flex-grow: 2; }
-        
-        button { padding: 10px 20px; border: none; font-weight: 800; cursor: pointer; border-radius: 4px; font-family: 'Changa'; transition: all 0.2s;}
-        
-        button.save-btn { background: #444; color: #fff; font-size: 0.9em; width: 100%; margin-top: 10px; }
-        button.save-btn:hover { background: #555; }
+        label { font-size: 0.9em; color: #ccc; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #ff9800; }
+        input[type="number"], input[type="text"], input[type="password"] { 
+            padding: 8px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px; font-family: 'Changa'; 
+        }
 
-        button#mainBtn { background: #ff9800; color: black; min-width: 80px;}
-        button#mainBtn:hover { background: #e68900; }
-        button#mainBtn.edit-mode { background: #2196F3; color: white; }
-        button#cancelBtn { background: #555; color: white; display: none; }
+        /* --- قسم القوالب --- */
+        .presets-panel {
+            background: #202020; padding: 10px; margin-bottom: 20px; border-radius: 4px; border: 1px solid #333;
+            display: flex; gap: 10px; align-items: center; justify-content: space-between;
+        }
 
+        /* --- إدخال المهام --- */
+        .input-group { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .input-main { flex-grow: 2; }
+        
+        button { padding: 10px 15px; border: none; font-weight: 800; cursor: pointer; border-radius: 4px; font-family: 'Changa'; transition: 0.2s; }
+        button.btn-primary { background: #ff9800; color: black; }
+        button.btn-primary:hover { background: #e68900; }
+        button.btn-save { background: #4CAF50; color: white; width: 100%; margin-top: 10px;}
+        button.btn-danger { background: #f44336; color: white; }
+        button.btn-secondary { background: #555; color: white; }
+
+        /* القائمة */
         ul { list-style: none; padding: 0; }
-        li { background: #252525; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; transition: background 0.2s; }
-        li:hover { background: #2a2a2a; }
-        
+        li { background: #252525; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; }
         li.type-main { border-right-color: #ff9800; }
         li.type-side { border-right-color: #00bcd4; }
-        li.done { opacity: 0.5; text-decoration: line-through; }
         
-        .badge { font-size: 0.7em; padding: 2px 8px; border-radius: 2px; margin-left: 8px; font-weight: bold; }
-        .badge-main { background: #ff9800; color: black; }
-        .badge-side { background: #00bcd4; color: black; }
-
-        .actions { display: flex; gap: 5px; }
-        .btn-action { border: none; background: #333; padding: 5px 10px; border-radius: 4px; cursor: pointer; color: #fff; }
-        .btn-action:hover { opacity: 0.8; }
-        .delete-btn { color: #f44336; }
-        .check-btn { color: #4CAF50; }
-        .edit-btn { color: #2196F3; }
-
+        .timer-badge { background: #e91e63; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 3px; margin-left: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>لوحة التحكم</h2>
+    <h2>مركز التحكم</h2>
     
-    <div class="settings-bar">
-        <div class="setting-row">
-            <label>⏱️ مدة البقاء ظاهراً (ثواني):</label>
-            <input type="number" id="visibleDuration" value="15" min="5">
+    <div class="settings-panel">
+        <div class="settings-row">
+            <div class="settings-group">
+                <label><input type="checkbox" id="glitchToggle"> تأثير التشويش (Glitch)</label>
+                <label><input type="checkbox" id="particlesToggle"> احتفال الجزيئات (Particles)</label>
+            </div>
         </div>
-        <div class="setting-row">
-            <label>💤 مدة الاختفاء/التكرار (ثواني):</label>
-            <input type="number" id="hiddenDuration" value="300" min="10" placeholder="مثلاً 300">
+        <div class="settings-row">
+            <label>وقت الظهور (ثواني): <input type="number" id="visibleDur" value="15" style="width:50px"></label>
+            <label>وقت الاختفاء (ثواني): <input type="number" id="hiddenDur" value="300" style="width:50px"></label>
         </div>
-        <button class="save-btn" onclick="saveSettings()">حفظ إعدادات التوقيت</button>
+        <div class="settings-row">
+            <label style="width:100%">Twitch Channel Points API (مستقبلاً): 
+                <input type="password" id="twitchToken" placeholder="ضع التوكن هنا..." style="flex-grow:1; margin-right:10px;">
+            </label>
+        </div>
+        <button class="btn-save" onclick="saveSettings()">حفظ جميع الإعدادات</button>
+    </div>
+
+    <div class="presets-panel">
+        <div style="display:flex; gap:5px; flex-grow:1;">
+            <input type="text" id="presetName" placeholder="اسم القالب (مثلاً: Minecraft)">
+            <button class="btn-secondary" onclick="savePreset()">حفظ القالب</button>
+        </div>
+        <div style="display:flex; gap:5px;">
+            <select id="presetSelect" style="padding:8px; background:#333; color:white; border:none;"></select>
+            <button class="btn-primary" onclick="loadPreset()">تحميل</button>
+            <button class="btn-danger" onclick="deletePreset()">حذف</button>
+        </div>
     </div>
 
     <div class="input-group">
-        <input type="text" id="taskInput" placeholder="عنوان المهمة..." onkeypress="handleEnter(event)">
-        <select id="taskType">
+        <input type="text" id="taskInput" class="input-main" placeholder="عنوان المهمة..." onkeypress="handleEnter(event)">
+        <select id="taskType" style="padding:10px; background:#222; color:#aaa; border:1px solid #444;">
             <option value="main">رئيسية</option>
             <option value="side">جانبية</option>
         </select>
-        <button id="mainBtn" onclick="submitTask()">إضافة</button>
-        <button id="cancelBtn" onclick="cancelEdit()">إلغاء</button>
+        <label title="إظهار عداد وقت لهذه المهمة" style="background:#333; padding:10px; border-radius:4px;">
+            <input type="checkbox" id="timerCheck"> ⏱️
+        </label>
+    </div>
+    <div style="display:flex; gap:10px; margin-bottom:20px;">
+        <button id="mainBtn" class="btn-primary" style="flex-grow:1;" onclick="submitTask()">إضافة المهمة</button>
+        <button id="cancelBtn" class="btn-secondary" style="display:none;" onclick="cancelEdit()">إلغاء</button>
     </div>
 
     <ul id="taskList"></ul>
-    <div id="statusMsg" style="text-align:center; color:#555; font-size:0.8em; margin-top:10px;">النظام جاهز</div>
+    <div id="statusMsg" style="text-align:center; color:#777; font-size:0.8em;">جاهز</div>
 </div>
 
 <script>
     const API_URL = "/api/data";
     
-    // الهيكل: مهام + إعدادات (وقت الظهور، وقت الاختفاء)
+    // الهيكل الكامل للبيانات
     let dataStore = {
         tasks: [],
         settings: { 
-            visibleDuration: 15, // كم ثانية تظهر
-            hiddenDuration: 300  // كم ثانية تختفي قبل الظهور التالي (300 = 5 دقائق)
-        }
+            visibleDuration: 15, 
+            hiddenDuration: 300,
+            enableGlitch: true,
+            enableParticles: true,
+            twitchToken: ""
+        },
+        presets: {} // لتخزين القوائم المحفوظة
     };
     
     let isEditing = false;
@@ -113,51 +130,104 @@
             const res = await fetch(API_URL);
             const rawData = await res.json();
             
-            if (Array.isArray(rawData)) {
+            // دمج البيانات للتأكد من وجود الحقول الجديدة
+            if (rawData && !Array.isArray(rawData)) {
+                dataStore = { ...dataStore, ...rawData };
+                // دمج الإعدادات الداخلية
+                dataStore.settings = { ...dataStore.settings, ...rawData.settings };
+                dataStore.presets = rawData.presets || {};
+            } else if (Array.isArray(rawData)) {
                 dataStore.tasks = rawData;
-            } else if (rawData && rawData.tasks) {
-                dataStore = rawData;
             }
 
-            // التأكد من وجود القيم الافتراضية
-            if (!dataStore.settings) dataStore.settings = { visibleDuration: 15, hiddenDuration: 300 };
-
-            // تحديث الواجهة
-            document.getElementById('visibleDuration').value = dataStore.settings.visibleDuration || 15;
-            document.getElementById('hiddenDuration').value = dataStore.settings.hiddenDuration || 300;
+            updateUI();
             render();
+            updatePresetList();
         } catch(e) { console.error(e); }
     }
 
+    function updateUI() {
+        document.getElementById('visibleDur').value = dataStore.settings.visibleDuration;
+        document.getElementById('hiddenDur').value = dataStore.settings.hiddenDuration;
+        document.getElementById('glitchToggle').checked = dataStore.settings.enableGlitch;
+        document.getElementById('particlesToggle').checked = dataStore.settings.enableParticles;
+        document.getElementById('twitchToken').value = dataStore.settings.twitchToken || "";
+    }
+
     function saveSettings() {
-        const visibleVal = parseInt(document.getElementById('visibleDuration').value);
-        const hiddenVal = parseInt(document.getElementById('hiddenDuration').value);
+        dataStore.settings.visibleDuration = parseInt(document.getElementById('visibleDur').value);
+        dataStore.settings.hiddenDuration = parseInt(document.getElementById('hiddenDur').value);
+        dataStore.settings.enableGlitch = document.getElementById('glitchToggle').checked;
+        dataStore.settings.enableParticles = document.getElementById('particlesToggle').checked;
+        dataStore.settings.twitchToken = document.getElementById('twitchToken').value;
+        syncData("تم حفظ الإعدادات!");
+    }
+
+    // --- إدارة القوالب (Presets) ---
+    function savePreset() {
+        const name = document.getElementById('presetName').value.trim();
+        if(!name) return alert("اكتب اسم القالب أولاً");
+        if(dataStore.tasks.length === 0) return alert("القائمة فارغة، لا يوجد شيء لحفظه");
+
+        dataStore.presets[name] = JSON.parse(JSON.stringify(dataStore.tasks)); // نسخة عميقة
+        syncData("تم حفظ القالب: " + name);
+        updatePresetList();
+        document.getElementById('presetName').value = "";
+    }
+
+    function loadPreset() {
+        const name = document.getElementById('presetSelect').value;
+        if(!name || !dataStore.presets[name]) return;
         
-        if(visibleVal > 0 && hiddenVal > 0) {
-            dataStore.settings.visibleDuration = visibleVal;
-            dataStore.settings.hiddenDuration = hiddenVal;
-            syncData();
-            alert("تم تحديث دورة التوقيت!");
+        if(confirm("سيتم استبدال القائمة الحالية بقالب: " + name)) {
+            dataStore.tasks = JSON.parse(JSON.stringify(dataStore.presets[name]));
+            render();
+            syncData("تم تحميل القالب");
         }
     }
 
+    function deletePreset() {
+        const name = document.getElementById('presetSelect').value;
+        if(!name) return;
+        if(confirm("حذف القالب: " + name + "؟")) {
+            delete dataStore.presets[name];
+            syncData("تم الحذف");
+            updatePresetList();
+        }
+    }
+
+    function updatePresetList() {
+        const select = document.getElementById('presetSelect');
+        select.innerHTML = "";
+        Object.keys(dataStore.presets).forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.innerText = name;
+            select.appendChild(opt);
+        });
+    }
+
+    // --- المهام ---
     function render() {
         const list = document.getElementById('taskList');
         list.innerHTML = "";
         dataStore.tasks.forEach((task, index) => {
             const li = document.createElement('li');
-            li.className = `type-${task.type || 'main'} ${task.done ? 'done' : ''}`;
-            const typeLabel = (task.type === 'side') ? '<span class="badge badge-side">فرعي</span>' : '<span class="badge badge-main">رئيسي</span>';
+            li.className = `type-${task.type || 'main'}`;
+            if(task.done) li.style.opacity = "0.5";
+
+            const timerBadge = task.hasTimer ? '<span class="timer-badge">⏱️ Timer</span>' : '';
+            const typeLabel = task.type === 'side' ? '<span style="color:#00bcd4; font-size:0.8em">[فرعي]</span>' : '<span style="color:#ff9800; font-size:0.8em">[رئيسي]</span>';
 
             li.innerHTML = `
-                <div style="display:flex; align-items:center; flex-grow:1;">
+                <div style="display:flex; align-items:center;">
                     ${typeLabel}
-                    <span style="margin-right:10px; font-size:18px;">${task.text}</span>
+                    <span style="margin-right:10px; font-size:18px;">${task.text} ${timerBadge}</span>
                 </div>
-                <div class="actions">
-                    <button class="btn-action check-btn" onclick="toggleTask(${index})">✔</button>
-                    <button class="btn-action edit-btn" onclick="startEdit(${index})">✎</button>
-                    <button class="btn-action delete-btn" onclick="deleteTask(${index})">✕</button>
+                <div>
+                    <button onclick="toggleTask(${index})" style="color:#4CAF50; background:none;">✔</button>
+                    <button onclick="startEdit(${index})" style="color:#2196F3; background:none;">✎</button>
+                    <button onclick="deleteTask(${index})" style="color:#f44336; background:none;">✕</button>
                 </div>
             `;
             list.appendChild(li);
@@ -165,28 +235,32 @@
     }
 
     function submitTask() {
-        const input = document.getElementById('taskInput');
-        const typeSelect = document.getElementById('taskType');
-        const text = input.value.trim();
+        const text = document.getElementById('taskInput').value.trim();
+        const type = document.getElementById('taskType').value;
+        const hasTimer = document.getElementById('timerCheck').checked;
+        
         if (!text) return;
 
         if (isEditing && currentEditId !== null) {
-            const taskIndex = dataStore.tasks.findIndex(t => t.id === currentEditId);
-            if (taskIndex > -1) {
-                dataStore.tasks[taskIndex].text = text;
-                dataStore.tasks[taskIndex].type = typeSelect.value;
+            const idx = dataStore.tasks.findIndex(t => t.id === currentEditId);
+            if (idx > -1) {
+                dataStore.tasks[idx].text = text;
+                dataStore.tasks[idx].type = type;
+                // لا نعدل المؤقت عند التحرير لتجنب المشاكل، إلا إذا أردت ذلك
             }
             cancelEdit();
         } else {
             dataStore.tasks.push({ 
-                text: text, 
+                text, type, 
                 done: false, 
                 id: Date.now(),
-                type: typeSelect.value 
+                hasTimer: hasTimer,
+                timerStart: hasTimer ? Date.now() : null // وقت البدء للمؤقت
             });
         }
         
-        input.value = "";
+        document.getElementById('taskInput').value = "";
+        document.getElementById('timerCheck').checked = false;
         render();
         syncData();
     }
@@ -195,11 +269,9 @@
         const task = dataStore.tasks[index];
         document.getElementById('taskInput').value = task.text;
         document.getElementById('taskType').value = task.type || 'main';
-        document.getElementById('taskInput').focus();
         isEditing = true;
         currentEditId = task.id;
-        document.getElementById('mainBtn').innerText = "حفظ";
-        document.getElementById('mainBtn').classList.add('edit-mode');
+        document.getElementById('mainBtn').innerText = "حفظ التعديل";
         document.getElementById('cancelBtn').style.display = 'block';
     }
 
@@ -207,41 +279,33 @@
         isEditing = false;
         currentEditId = null;
         document.getElementById('taskInput').value = "";
-        document.getElementById('taskType').value = "main";
-        document.getElementById('mainBtn').innerText = "إضافة";
-        document.getElementById('mainBtn').classList.remove('edit-mode');
+        document.getElementById('mainBtn').innerText = "إضافة المهمة";
         document.getElementById('cancelBtn').style.display = 'none';
     }
 
+    function deleteTask(index) { if(confirm('حذف؟')) { dataStore.tasks.splice(index, 1); render(); syncData(); } }
+    function toggleTask(index) { 
+        dataStore.tasks[index].done = !dataStore.tasks[index].done; 
+        // إذا انتهت المهمة، نحفظ وقت النهاية للمؤقت (اختياري)
+        if(dataStore.tasks[index].done && dataStore.tasks[index].hasTimer) {
+             dataStore.tasks[index].timerEnd = Date.now();
+        } else {
+             dataStore.tasks[index].timerEnd = null; // إعادة استكمال العد
+        }
+        render(); syncData(); 
+    }
     function handleEnter(e) { if (e.key === 'Enter') submitTask(); }
 
-    function deleteTask(index) {
-        if(confirm('حذف؟')) { 
-            if(isEditing && dataStore.tasks[index].id === currentEditId) cancelEdit();
-            dataStore.tasks.splice(index, 1); 
-            render(); 
-            syncData(); 
-        }
-    }
-
-    function toggleTask(index) {
-        dataStore.tasks[index].done = !dataStore.tasks[index].done;
-        render();
-        syncData();
-    }
-
-    async function syncData() {
-        const status = document.getElementById('statusMsg');
-        status.innerText = "جاري الحفظ...";
+    async function syncData(msg = "تم التحديث") {
+        document.getElementById('statusMsg').innerText = "جاري الحفظ...";
         try {
             await fetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dataStore)
             });
-            status.innerText = "تم التحديث";
-            setTimeout(() => status.innerText = "النظام جاهز", 2000);
-        } catch(e) { status.innerText = "فشل الاتصال"; }
+            document.getElementById('statusMsg').innerText = msg;
+        } catch(e) { document.getElementById('statusMsg').innerText = "فشل الاتصال"; }
     }
 
     loadData();
