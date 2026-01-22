@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>HUD Overlay - Simple Levels</title>
+    <title>HUD Overlay Final</title>
     <link href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700;800&display=swap" rel="stylesheet">
     <script src="https://github.com/tmijs/tmi.js/releases/download/v1.8.5/tmi.min.js"></script>
 
@@ -53,20 +53,13 @@
         .just-finished { animation: mission-complete 1.5s ease-out forwards; }
         .confetti { position: absolute; width: 8px; height: 8px; background-color: #f00; animation: confetti-fall 2s linear forwards; pointer-events: none; }
         @keyframes confetti-fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100px) rotate(360deg); opacity: 0; } }
-        
-        /* أنميشن Level Up */
-        .level-up-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; z-index: 999;
-        }
+
+        .level-up-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; z-index: 999; }
         .level-up-text { font-size: 4em; color: #ffeb3b; text-shadow: 0 0 20px #ff9800; font-weight: 900; transform: scale(0.5); }
         .level-anim-active { animation: lvl-fade 3s forwards; }
         .level-anim-active .level-up-text { animation: lvl-pop 3s forwards; }
-        
         @keyframes lvl-fade { 0% { opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
         @keyframes lvl-pop { 0% { transform: scale(0.5); } 20% { transform: scale(1.2); } 100% { transform: scale(1); } }
-
     </style>
 </head>
 <body id="bodyEl">
@@ -76,9 +69,9 @@
 </div>
 
 <div id="hudContainer" class="hud-wrapper">
-    <div class="level-container">
+    <div class="level-container" id="lvlContainer">
         <div class="level-badge" id="levelDisplay">LVL 1</div>
-        <div class="progress-track">
+        <div class="progress-track" id="xpTrack">
             <div class="progress-fill" id="xpBar"></div>
         </div>
     </div>
@@ -99,11 +92,13 @@
 
 <script>
     const API_URL = "/api/data";
-    // الإعدادات الافتراضية
+    // الإعدادات
     let config = { 
         visibleDuration: 15, hiddenDuration: 300, 
-        enableGlitch: true, enableParticles: true, 
-        autoLevelUp: true, currentLevel: 1, twitchChannel: ""
+        visibilityMode: 'auto', // auto | always
+        hideLevel: false, hideXP: false,
+        enableGlitch: true, enableParticles: true, autoLevelUp: true,
+        currentLevel: 1, twitchChannel: ""
     };
     
     let activeTimer = null;
@@ -117,18 +112,33 @@
     function showHud() {
         const hud = document.getElementById('hudContainer');
         const body = document.getElementById('bodyEl');
+        
         if(config.enableGlitch) body.classList.add('glitch-active');
         else body.classList.remove('glitch-active');
+
         hud.classList.add('hud-visible');
+        
+        // إذا كان الوضع "دائم"، لا نضع مؤقت للاختفاء
+        if(config.visibilityMode === 'always') {
+            if (activeTimer) clearTimeout(activeTimer);
+            return;
+        }
+
+        // إذا الوضع "تلقائي"، شغل المؤقت
         if (activeTimer) clearTimeout(activeTimer);
         activeTimer = setTimeout(hideHud, config.visibleDuration * 1000);
     }
 
     function hideHud() {
+        // إذا كان الوضع "دائم"، امنع الإخفاء
+        if(config.visibilityMode === 'always') return;
+
         document.getElementById('hudContainer').classList.remove('hud-visible');
+        
         if (activeTimer) clearTimeout(activeTimer);
-        // التكرار فقط إذا كان هناك مهام في اللفل الحالي
         const currentTasks = currentData.tasks.filter(t => (t.level || 1) == config.currentLevel);
+        
+        // إعادة الظهور بعد مدة، فقط إذا كان هناك مهام
         activeTimer = setTimeout(() => { 
             if (currentTasks.length > 0) showHud(); 
         }, config.hiddenDuration * 1000);
@@ -159,7 +169,6 @@
     function processUpdate(newData) {
         const tasksChanged = JSON.stringify(newData.tasks) !== JSON.stringify(currentData.tasks);
         
-        // اكتشاف المهام المكتملة حديثاً (فقط في اللفل الحالي)
         justCompletedIds = [];
         const currentTasks = newData.tasks.filter(t => (t.level || 1) == config.currentLevel);
         
@@ -172,25 +181,34 @@
 
         if (tasksChanged || currentData.tasks.length === 0) {
             updateDom(newData.tasks);
-            // إظهار القائمة في حالة التغيير أو البداية
-            const hasActiveTasks = currentTasks.length > 0;
-            if ((hasActiveTasks && tasksChanged) || (currentData.tasks.length === 0 && hasActiveTasks)) {
-                triggerManualUpdate();
+            if(config.visibilityMode === 'always') {
+                showHud(); // تأكد أنه ظاهر
+            } else {
+                if ((currentTasks.length > 0 && tasksChanged) || (currentData.tasks.length === 0 && currentTasks.length > 0)) {
+                    triggerManualUpdate();
+                }
             }
         }
         currentData = newData;
-        
-        // التحقق من الانتقال التلقائي
         checkAutoLevelUp(newData);
     }
 
     function updateDom(allTasks) {
-        // 1. تصفية المهام لعرض اللفل الحالي فقط
-        const currentLvlTasks = allTasks.filter(t => (t.level || 1) == config.currentLevel);
+        // --- تطبيق إعدادات الإخفاء ---
+        document.getElementById('levelDisplay').style.display = config.hideLevel ? 'none' : 'block';
+        document.getElementById('xpTrack').style.display = config.hideXP ? 'none' : 'block';
+        
+        // إذا كان كلاهما مخفي، أخف الحاوية بالكامل لتقليل الفراغ
+        if(config.hideLevel && config.hideXP) {
+            document.getElementById('lvlContainer').style.display = 'none';
+        } else {
+            document.getElementById('lvlContainer').style.display = 'flex';
+        }
+        // -----------------------------
 
+        const currentLvlTasks = allTasks.filter(t => (t.level || 1) == config.currentLevel);
         document.getElementById('levelDisplay').innerText = `LVL ${config.currentLevel || 1}`;
         
-        // حساب XP للفل الحالي فقط
         let totalPoints = 0; let earnedPoints = 0;
         currentLvlTasks.forEach(t => {
             const points = (t.type === 'side') ? 1 : 3;
@@ -200,14 +218,12 @@
         const progressPercent = totalPoints === 0 ? 0 : (earnedPoints / totalPoints) * 100;
         document.getElementById('xpBar').style.width = `${progressPercent}%`;
 
-        // تلوين البار عند الاكتمال
         if(progressPercent >= 100 && currentLvlTasks.length > 0) {
             document.getElementById('xpBar').style.background = "#4CAF50";
         } else {
             document.getElementById('xpBar').style.background = "linear-gradient(90deg, #ff9800, #ffeb3b)";
         }
 
-        // بناء القائمة
         const mainList = document.getElementById('main-list');
         const sideList = document.getElementById('side-list');
         const mainSection = document.getElementById('main-section');
@@ -246,58 +262,41 @@
         mainSection.style.display = hasMain ? 'block' : 'none';
         sideSection.style.display = hasSide ? 'block' : 'none';
         
-        // إذا لم يكن هناك مهام لهذا اللفل، أخف القائمة
         if(currentLvlTasks.length === 0) {
             document.getElementById('hudContainer').classList.remove('hud-visible');
         }
-        
         updateTimers();
     }
 
-    // --- المنطق الجديد للانتقال التلقائي ---
     async function checkAutoLevelUp(data) {
         if (!config.autoLevelUp || isTransitioning) return;
-        
-        // جلب مهام اللفل الحالي
         const currentTasks = data.tasks.filter(t => (t.level || 1) == config.currentLevel);
         if (currentTasks.length === 0) return;
 
-        // هل كلها مكتملة؟
         const allDone = currentTasks.every(t => t.done);
-        
         if (allDone) {
-            // تحقق هل يوجد مهام للفل القادم؟
             const nextLevel = (config.currentLevel || 1) + 1;
             const nextTasks = data.tasks.filter(t => (t.level || 1) == nextLevel);
             
             if (nextTasks.length > 0) {
-                // نعم يوجد لفل قادم!
                 isTransitioning = true;
-                
                 setTimeout(async () => {
-                    // تشغيل أنميشن Level Up
                     const lvlAudio = document.getElementById("levelUpSound");
                     if(lvlAudio) { lvlAudio.currentTime = 0; lvlAudio.play().catch(()=>{}); }
-                    
                     const overlay = document.getElementById('lvlOverlay');
                     overlay.classList.add('level-anim-active');
                     setTimeout(() => overlay.classList.remove('level-anim-active'), 3000);
 
-                    // تحديث اللفل في السيرفر
                     data.settings.currentLevel = nextLevel;
-                    
                     try {
                         await fetch(API_URL, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(data)
                         });
-                        console.log("Level Up to: " + nextLevel);
                     } catch(e) { console.error(e); }
-
                     setTimeout(() => { isTransitioning = false; }, 5000);
-
-                }, 3000); // انتظر 3 ثواني بعد آخر مهمة
+                }, 3000);
             }
         }
     }
@@ -325,11 +324,10 @@
             document.body.appendChild(p); setTimeout(() => p.remove(), 2000);
         }
     }
-
     setInterval(updateTimers, 1000);
 
     async function toggleTaskStatus(task) {
-        triggerManualUpdate();
+        if(config.visibilityMode === 'auto') triggerManualUpdate();
         const idx = currentData.tasks.findIndex(t => t.id === task.id);
         if(idx > -1) {
             currentData.tasks[idx].done = !currentData.tasks[idx].done;
