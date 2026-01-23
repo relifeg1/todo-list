@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Quick Todo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* تصميم داكن يناسب ثيم OBS */
+        body { 
+            font-family: 'Changa', sans-serif; 
+            background-color: #1c1c1c; /* لون خلفية OBS */
+            color: #eee; 
+            margin: 0; padding: 10px;
+            font-size: 14px;
+        }
+
+        /* منطقة الإدخال */
+        .input-group {
+            display: flex; gap: 5px; margin-bottom: 15px;
+        }
+        input {
+            width: 100%; padding: 8px;
+            background: #333; border: 1px solid #444; color: white;
+            border-radius: 4px; font-family: 'Changa'; outline: none;
+        }
+        button#addBtn {
+            background: #ff9800; color: black; border: none;
+            padding: 0 15px; font-weight: bold; border-radius: 4px; cursor: pointer;
+        }
+        button#addBtn:hover { background: #e68900; }
+
+        /* القائمة */
+        ul { list-style: none; padding: 0; margin: 0; }
+        
+        li {
+            background: #2b2b2b;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-right: 3px solid #555;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        li:hover { background: #333; }
+
+        /* المهمة المنتهية */
+        li.done {
+            opacity: 0.5;
+            background: #222;
+            border-right-color: #4CAF50;
+            text-decoration: line-through;
+        }
+
+        /* زر الحذف الصغير */
+        .del-btn {
+            background: none; border: none; color: #f44336;
+            font-size: 1.2em; padding: 0 5px; cursor: pointer;
+            margin-right: 10px;
+        }
+        .del-btn:hover { color: #d32f2f; }
+
+        /* نص المهمة */
+        .task-text { flex-grow: 1; user-select: none; }
+        
+        /* مؤشر التحميل */
+        .status { font-size: 0.7em; color: #666; text-align: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="input-group">
+        <input type="text" id="taskInput" placeholder="مهمة جديدة..." onkeypress="handleEnter(event)">
+        <button id="addBtn" onclick="addTask()">+</button>
+    </div>
+
+    <ul id="list"></ul>
+    <div id="status" class="status">جاهز</div>
+
+<script>
+    const API_URL = "/api/data";
+    let tasks = [];
+    let currentData = {}; // لتخزين الإعدادات أيضاً
+
+    // جلب البيانات
+    async function load() {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            
+            if (data.tasks) {
+                currentData = data;
+                tasks = data.tasks;
+            } else if (Array.isArray(data)) {
+                tasks = data;
+                currentData = { tasks: data };
+            }
+            render();
+        } catch(e) { document.getElementById('status').innerText = "خطأ في الاتصال"; }
+    }
+
+    // عرض القائمة
+    function render() {
+        const list = document.getElementById('list');
+        list.innerHTML = "";
+        
+        // الترتيب: غير المنتهي أولاً
+        tasks.sort((a, b) => a.done - b.done);
+
+        tasks.forEach((task, index) => {
+            // نبحث عن الاندكس الحقيقي في المصفوفة الأصلية
+            const realIndex = currentData.tasks.findIndex(t => t.id === task.id);
+
+            const li = document.createElement('li');
+            if(task.done) li.className = 'done';
+            
+            // عند الضغط على النص، يتم إنهاء المهمة
+            li.onclick = (e) => {
+                if(e.target.className !== 'del-btn') toggle(realIndex);
+            };
+
+            li.innerHTML = `
+                <span class="task-text">${task.text}</span>
+                <button class="del-btn" onclick="del(${realIndex})">×</button>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    // إضافة
+    function addTask() {
+        const input = document.getElementById('taskInput');
+        const text = input.value.trim();
+        if(!text) return;
+
+        // نضيف إعدادات افتراضية (Level 1, Main) لكي لا يخرب الـ Overlay
+        currentData.tasks.push({
+            text: text,
+            done: false,
+            id: Date.now(),
+            type: 'main',
+            level: (currentData.settings && currentData.settings.currentLevel) || 1, 
+            hasTimer: false
+        });
+
+        input.value = "";
+        save();
+    }
+
+    // تبديل الحالة (صح/خطأ)
+    function toggle(index) {
+        currentData.tasks[index].done = !currentData.tasks[index].done;
+        // إلغاء الفشل إذا تم الإنجاز
+        if(currentData.tasks[index].done) currentData.tasks[index].failed = false;
+        save();
+    }
+
+    // حذف
+    function del(index) {
+        if(confirm('حذف؟')) {
+            currentData.tasks.splice(index, 1);
+            save();
+        }
+    }
+
+    // حفظ في السيرفر
+    async function save() {
+        document.getElementById('status').innerText = "جاري الحفظ...";
+        try {
+            await fetch(API_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentData)
+            });
+            document.getElementById('status').innerText = "تم التحديث";
+            load(); // إعادة تحميل للتأكيد
+        } catch(e) { document.getElementById('status').innerText = "فشل الحفظ"; }
+    }
+
+    function handleEnter(e) { if(e.key === 'Enter') addTask(); }
+
+    // تحديث تلقائي كل 3 ثواني
+    setInterval(load, 3000);
+    load();
+</script>
+
+</body>
+</html>
