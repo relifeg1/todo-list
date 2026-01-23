@@ -84,6 +84,12 @@
         .rank-F { color: #f44336; text-shadow: 0 0 30px #b71c1c; }
         @keyframes rank-pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
+        .level-up-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; z-index: 999; }
+        .level-up-text { font-size: 4em; color: #ffeb3b; text-shadow: 0 0 20px #ff9800; font-weight: 900; transform: scale(0.5); }
+        .level-anim-active { animation: lvl-fade 3s forwards; }
+        .level-anim-active .level-up-text { animation: lvl-pop 3s forwards; }
+        @keyframes lvl-fade { 0% { opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes lvl-pop { 0% { transform: scale(0.5); } 20% { transform: scale(1.2); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body id="bodyEl">
@@ -114,10 +120,12 @@
             <div class="progress-fill" id="xpBar"></div>
         </div>
     </div>
+
     <div id="main-section" style="display:none;">
-        <div class="section-title title-main">/// العمليات الرئيسية</div>
+        <div class="section-title title-main">/// أهداف رئيسية</div>
         <ul id="main-list"></ul>
     </div>
+
     <div id="side-section" style="display:none;">
         <div class="section-title title-side">/// أهداف ثانوية</div>
         <ul id="side-list"></ul>
@@ -141,13 +149,13 @@
     let currentData = { tasks: [], settings: {} };
     let displayMap = [];
     let justCompletedIds = [];
-    let justFailedIds = []; // تعقب الفاشلة
+    let justFailedIds = [];
     let tasksWithTimer = [];
     let twitchClient = null;
     let isTransitioning = false; 
 
     function showHud() {
-        if(config.showAAR) return; // لا تظهر القائمة إذا كان التقرير معروضاً
+        if(config.showAAR) return;
         const hud = document.getElementById('hudContainer');
         const body = document.getElementById('bodyEl');
         if(config.enableGlitch) body.classList.add('glitch-active');
@@ -194,7 +202,7 @@
             if(!aarScreen.classList.contains('aar-visible')) {
                 showAAR(newData.tasks);
                 aarScreen.classList.add('aar-visible');
-                document.getElementById('hudContainer').classList.remove('hud-visible'); // إخفاء القائمة العادية
+                document.getElementById('hudContainer').classList.remove('hud-visible'); 
             }
         } else {
             aarScreen.classList.remove('aar-visible');
@@ -238,7 +246,7 @@
         
         let totalPoints = 0; let earnedPoints = 0;
         currentLvlTasks.forEach(t => {
-            if(t.failed) return; // المهام الفاشلة لا تحسب في XP
+            if(t.failed) return; 
             const points = (t.type === 'side') ? 1 : 3;
             totalPoints += points;
             if(t.done) earnedPoints += points;
@@ -263,9 +271,8 @@
             li.id = `task-${task.id}`; li.className = isSide ? 'task-side' : 'task-main';
             
             if (task.done) li.classList.add('done');
-            if (task.failed) li.classList.add('failed'); // كلاس الفشل
+            if (task.failed) li.classList.add('failed');
 
-            // أنميشن النجاح
             if (justCompletedIds.includes(task.id)) {
                 li.classList.add('just-finished');
                 if(config.enableParticles) spawnParticles(li);
@@ -273,7 +280,6 @@
                 if(audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
             }
 
-            // أنميشن الفشل
             if (justFailedIds.includes(task.id)) {
                 li.classList.add('just-failed');
                 const audio = document.getElementById("failSound");
@@ -297,38 +303,17 @@
         updateTimers();
     }
 
-    // --- منطق شاشة النتائج ---
     function showAAR(allTasks) {
-        // تشغيل صوت التقرير
         const audio = document.getElementById("reportSound");
         if(audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
-
-        // حساب الإحصائيات (يمكنك جعلها لكل المهام أو اللفل الحالي فقط)
-        // هنا سأجعلها لكل المهام المسجلة
-        let doneCount = 0;
-        let failCount = 0;
-        let total = 0;
-
-        allTasks.forEach(t => {
-            if(t.done) doneCount++;
-            if(t.failed) failCount++;
-            total++;
-        });
-
-        // حساب الرانك
+        let doneCount = 0; let failCount = 0; let total = 0;
+        allTasks.forEach(t => { if(t.done) doneCount++; if(t.failed) failCount++; total++; });
         let rank = "F";
-        const validTotal = doneCount + failCount; // المهام التي تم التفاعل معها
+        const validTotal = doneCount + failCount; 
         const percent = validTotal === 0 ? 0 : (doneCount / validTotal) * 100;
-
-        if (percent >= 95) rank = "S";
-        else if (percent >= 80) rank = "A";
-        else if (percent >= 60) rank = "B";
-        else if (percent >= 40) rank = "C";
-        else rank = "F";
-
+        if (percent >= 95) rank = "S"; else if (percent >= 80) rank = "A"; else if (percent >= 60) rank = "B"; else if (percent >= 40) rank = "C"; else rank = "F";
         document.getElementById('aarSuccess').innerText = doneCount;
         document.getElementById('aarFail').innerText = failCount;
-        
         const rankEl = document.getElementById('aarRank');
         rankEl.innerText = rank;
         rankEl.className = `rank-box rank-${rank}`;
@@ -338,8 +323,6 @@
         if (!config.autoLevelUp || isTransitioning || config.showAAR) return;
         const currentTasks = data.tasks.filter(t => (t.level || 1) == config.currentLevel);
         if (currentTasks.length === 0) return;
-        
-        // الانتقال يتم إذا انتهت كل المهام (نجاح أو فشل)
         const allFinished = currentTasks.every(t => t.done || t.failed);
         if (allFinished) {
             const nextLevel = (config.currentLevel || 1) + 1;
