@@ -2,8 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - مدير البث</title>
+    <title>Admin - Mission Control</title>
     <link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
@@ -11,96 +10,71 @@
         .container { width: 100%; max-width: 800px; background: #1a1a1a; padding: 25px; border-radius: 8px; border: 1px solid #333; }
         h2 { text-align: center; color: #ff9800; margin-bottom: 20px; font-weight: 800; }
         
-        /* لوحة التحكم */
-        .control-panel {
-            background: #252525; padding: 15px; border-radius: 6px; border: 1px solid #444;
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;
-        }
-        
+        .control-panel { background: #252525; padding: 15px; border-radius: 6px; border: 1px solid #444; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
         .control-group { display: flex; flex-direction: column; gap: 5px; }
         .control-group label { font-size: 0.85em; color: #aaa; }
 
         input, select { padding: 8px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px; font-family: 'Changa'; outline: none; }
         input[type="checkbox"] { width: 18px; height: 18px; accent-color: #ff9800; cursor: pointer; }
 
-        /* التحكم باللفل */
-        .level-control {
-            grid-column: span 2; background: #000; padding: 10px; border-radius: 4px; border: 1px dashed #ff9800;
+        /* زر تقرير المهمة */
+        .aar-control {
+            grid-column: span 2; background: #0d1117; padding: 10px; border: 1px solid #30363d; border-radius: 6px;
             display: flex; justify-content: space-between; align-items: center;
         }
-        .current-lvl-display { font-size: 1.2em; color: #ffeb3b; font-weight: bold; }
+        .aar-btn { background: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
+        .aar-btn.active { background: #f44336; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
 
         /* منطقة المهام */
         .input-area { background: #202020; padding: 15px; border-radius: 6px; border-bottom: 3px solid #ff9800; margin-bottom: 20px; }
         .input-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
         
-        button { padding: 10px 20px; border: none; font-weight: 800; cursor: pointer; border-radius: 4px; font-family: 'Changa'; transition: 0.2s; }
-        .btn-add { background: #ff9800; color: black; flex-grow: 1; }
-        .btn-save { background: #4CAF50; color: white; width: 100%; }
-        .btn-reset { background: #f44336; color: white; padding: 5px 10px; font-size: 0.8em; }
+        button { padding: 8px 15px; border: none; font-weight: 800; cursor: pointer; border-radius: 4px; font-family: 'Changa'; transition: 0.2s; }
+        .btn-add { background: #ff9800; color: black; flex-grow: 1; padding: 10px; }
+        .btn-save { background: #4CAF50; color: white; width: 100%; margin-top: 10px;}
+        .btn-reset { background: #555; color: white; padding: 5px 10px; font-size: 0.8em; }
 
-        /* ----------------------------------------------------
-           تصميم القائمة الجديد (التحسينات المطلوبة)
-           ---------------------------------------------------- */
+        /* القائمة */
         ul { list-style: none; padding: 0; }
+        li { padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px; transition: all 0.3s ease; }
+
+        li.status-active { background: #2e2e2e; border-right: 5px solid #ff9800; }
+        li.status-done { background: #111; border-right: 5px solid #4CAF50; opacity: 0.7; }
+        li.status-failed { background: #2a0a0a; border-right: 5px solid #f44336; opacity: 0.8; } /* ستايل الفشل */
+        li.future-level { opacity: 0.3; filter: grayscale(100%); }
+
+        .task-actions button { font-size: 1.1em; margin-left: 5px; background: rgba(255,255,255,0.05); }
+        .task-actions button:hover { background: rgba(255,255,255,0.1); }
         
-        li { 
-            padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; 
-            border-radius: 6px; transition: all 0.3s ease;
-        }
-
-        /* 1. تصميم المهمة النشطة (قيد التنفيذ) */
-        li.status-active {
-            background: #2e2e2e; /* خلفية أفتح قليلاً */
-            border: 1px solid #444;
-            border-right: 5px solid #ff9800; /* خط برتقالي يمين */
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        li.status-active .task-text {
-            color: #fff; font-weight: bold; font-size: 1.1em;
-        }
-        li.status-active .status-badge {
-            background: #ff9800; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.7em; margin-left: 8px;
-        }
-
-        /* 2. تصميم المهمة المنتهية (مكتمل) */
-        li.status-done {
-            background: #111; /* خلفية داكنة جداً */
-            border: 1px solid #222;
-            border-right: 5px solid #4CAF50; /* خط أخضر يمين */
-            opacity: 0.7; /* شفافية بسيطة */
-        }
-        li.status-done .task-text {
-            color: #777; text-decoration: line-through; /* خط على النص */
-        }
-        li.status-done .status-badge {
-            background: #4CAF50; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.7em; margin-left: 8px;
-        }
-
-        /* تمييز مهام المستقبل (لفلات أخرى) */
-        li.future-level { opacity: 0.3; filter: grayscale(100%); pointer-events: none; }
+        .status-badge { padding: 2px 8px; border-radius: 4px; font-size: 0.7em; margin-left: 8px; }
+        .badge-done { background: #4CAF50; color: #fff; }
+        .badge-fail { background: #f44336; color: #fff; }
+        .badge-active { background: #ff9800; color: #000; }
 
         .lvl-badge { background: #333; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin-left: 5px; }
-        .type-badge { font-size: 0.8em; margin-left: 10px; }
-
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>مدير البث المتقدم</h2>
+    <h2>مدير البث: غرفة العمليات</h2>
     
     <div class="control-panel">
+        <div class="aar-control">
+            <button id="aarBtn" class="aar-btn" onclick="toggleAAR()">📋 إظهار شاشة النتائج (Mission Report)</button>
+        </div>
+
         <div class="control-group">
             <label>👁️ نمط الظهور</label>
             <select id="visMode">
-                <option value="auto">مؤقت (يظهر ويختفي)</option>
-                <option value="always">دائم (ثابت على الشاشة)</option>
+                <option value="auto">مؤقت (Auto-Hide)</option>
+                <option value="always">دائم (Always On)</option>
             </select>
         </div>
         
         <div class="control-group">
-            <label>⏱️ توقيت الظهور / الاختفاء (ثواني)</label>
+            <label>⏱️ التوقيت (ثواني)</label>
             <div style="display:flex; gap:5px;">
                 <input type="number" id="visibleDur" value="15" placeholder="ظهور">
                 <input type="number" id="hiddenDur" value="300" placeholder="اختفاء">
@@ -108,23 +82,18 @@
         </div>
 
         <div class="control-group" style="grid-column: span 2; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="hideLevelToggle"> إخفاء رقم اللفل</label>
-            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="hideXPToggle"> إخفاء شريط XP</label>
-            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="autoLevelToggle" checked> انتقال تلقائي للفل</label>
-            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="glitchToggle"> تأثير Glitch</label>
-            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="particlesToggle"> جزيئات Particles</label>
+            <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="hideLevelToggle"> إخفاء اللفل</label>
+            <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="hideXPToggle"> إخفاء XP</label>
+            <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="autoLevelToggle" checked> أوتو لفل</label>
+            <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="glitchToggle"> Glitch</label>
+            <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="particlesToggle"> Particles</label>
         </div>
 
-        <div class="control-group" style="grid-column: span 2;">
-            <label>قناة تويتش (Twitch Channel)</label>
-            <input type="text" id="twitchChannel" placeholder="اسم القناة بالانجليزي">
-        </div>
-
-        <div class="level-control">
-            <span class="current-lvl-display">المستوى الحالي: <span id="displayLvl">1</span></span>
+        <div class="level-control" style="grid-column: span 2; background:#000; padding:10px; display:flex; justify-content:space-between; align-items:center; border:1px dashed #555;">
+            <span style="color:#ffeb3b; font-weight:bold;">المستوى الحالي: <span id="displayLvl">1</span></span>
             <div>
                 <button class="btn-reset" onclick="resetLevel(1)">تصفير لـ 1</button>
-                <button class="btn-save" style="width:auto; display:inline-block;" onclick="saveSettings()">حفظ الإعدادات</button>
+                <button class="btn-save" style="width:auto; display:inline-block;" onclick="saveSettings()">حفظ الكل</button>
             </div>
         </div>
     </div>
@@ -132,8 +101,7 @@
     <div class="input-area">
         <div class="input-row">
             <input type="text" id="taskInput" placeholder="اكتب المهمة..." style="flex-grow: 2;">
-            <div style="display:flex; flex-direction:column; width: 80px;">
-                <label style="font-size:0.7em; color:#aaa; margin-bottom:2px;">لفل:</label>
+            <div style="display:flex; flex-direction:column; width: 60px;">
                 <input type="number" id="taskLevelInput" value="1" min="1" style="text-align:center; font-weight:bold; color:#ffeb3b;">
             </div>
             <select id="taskType" style="width: 100px;">
@@ -143,14 +111,13 @@
         </div>
         <div class="input-row">
             <label style="background:#333; padding:8px; border-radius:4px; font-size:0.9em; display:flex; align-items:center; gap:5px;">
-                <input type="checkbox" id="timerCheck"> عداد وقت ⏱️
+                <input type="checkbox" id="timerCheck"> عداد ⏱️
             </label>
             <button id="mainBtn" class="btn-add" onclick="submitTask()">إضافة</button>
             <button id="cancelBtn" class="btn-reset" style="display:none; background:#555;" onclick="cancelEdit()">إلغاء</button>
         </div>
     </div>
 
-    <h3 style="color:#777; border-bottom:1px solid #333; padding-bottom:5px;">قائمة المهام</h3>
     <ul id="taskList"></ul>
     <div id="statusMsg" style="text-align:center; color:#555; font-size:0.8em;">..</div>
 </div>
@@ -160,11 +127,10 @@
     let dataStore = {
         tasks: [],
         settings: { 
-            visibleDuration: 15, hiddenDuration: 300,
-            visibilityMode: 'auto',
-            hideLevel: false, hideXP: false,
-            enableGlitch: true, enableParticles: true, autoLevelUp: true,
-            currentLevel: 1, twitchChannel: ""
+            visibleDuration: 15, hiddenDuration: 300, visibilityMode: 'auto',
+            hideLevel: false, hideXP: false, enableGlitch: true, enableParticles: true, autoLevelUp: true,
+            currentLevel: 1, twitchChannel: "",
+            showAAR: false // حالة شاشة النتائج
         }
     };
     
@@ -184,42 +150,48 @@
         } catch(e) { console.error(e); }
     }
 
-    setInterval(() => { if(!isEditing) loadData(); }, 5000);
+    setInterval(() => { if(!isEditing) loadData(); }, 3000);
 
     function updateUI() {
         document.getElementById('visMode').value = dataStore.settings.visibilityMode || 'auto';
         document.getElementById('visibleDur').value = dataStore.settings.visibleDuration;
         document.getElementById('hiddenDur').value = dataStore.settings.hiddenDuration;
-        
         document.getElementById('hideLevelToggle').checked = dataStore.settings.hideLevel;
         document.getElementById('hideXPToggle').checked = dataStore.settings.hideXP;
-        
         document.getElementById('glitchToggle').checked = dataStore.settings.enableGlitch;
         document.getElementById('particlesToggle').checked = dataStore.settings.enableParticles;
         document.getElementById('autoLevelToggle').checked = dataStore.settings.autoLevelUp;
-        document.getElementById('twitchChannel').value = dataStore.settings.twitchChannel || "";
         document.getElementById('displayLvl').innerText = dataStore.settings.currentLevel || 1;
         
-        // تحديث حقل اللفل في الإدخال ليطابق اللفل الحالي تلقائياً
-        if(!isEditing) {
-             document.getElementById('taskLevelInput').value = dataStore.settings.currentLevel || 1;
+        // تحديث زر الـ AAR
+        const aarBtn = document.getElementById('aarBtn');
+        if (dataStore.settings.showAAR) {
+            aarBtn.classList.add('active');
+            aarBtn.innerText = "❌ إخفاء شاشة النتائج";
+        } else {
+            aarBtn.classList.remove('active');
+            aarBtn.innerText = "📋 إظهار شاشة النتائج (Mission Report)";
         }
+
+        if(!isEditing) document.getElementById('taskLevelInput').value = dataStore.settings.currentLevel || 1;
     }
 
     function saveSettings() {
         dataStore.settings.visibilityMode = document.getElementById('visMode').value;
         dataStore.settings.visibleDuration = parseInt(document.getElementById('visibleDur').value);
         dataStore.settings.hiddenDuration = parseInt(document.getElementById('hiddenDur').value);
-        
         dataStore.settings.hideLevel = document.getElementById('hideLevelToggle').checked;
         dataStore.settings.hideXP = document.getElementById('hideXPToggle').checked;
-        
         dataStore.settings.enableGlitch = document.getElementById('glitchToggle').checked;
         dataStore.settings.enableParticles = document.getElementById('particlesToggle').checked;
         dataStore.settings.autoLevelUp = document.getElementById('autoLevelToggle').checked;
-        dataStore.settings.twitchChannel = document.getElementById('twitchChannel').value;
-        
         syncData("تم حفظ الإعدادات!");
+    }
+
+    function toggleAAR() {
+        dataStore.settings.showAAR = !dataStore.settings.showAAR;
+        syncData(dataStore.settings.showAAR ? "تم عرض النتائج" : "تم إخفاء النتائج");
+        updateUI();
     }
 
     function resetLevel(lvl) {
@@ -236,33 +208,36 @@
         sortedTasks.forEach((task) => {
             const originalIndex = dataStore.tasks.findIndex(t => t.id === task.id);
             const li = document.createElement('li');
-            
             const isCurrentLvl = task.level == dataStore.settings.currentLevel;
             
-            // تحديد الكلاس بناءً على الحالة
-            if (!isCurrentLvl) {
-                li.className = 'future-level'; // مهام مستقبلية
+            let statusBadge = '<span class="status-badge badge-active">⏳ جاري</span>';
+            if (task.failed) {
+                li.className = 'status-failed';
+                statusBadge = '<span class="status-badge badge-fail">☠️ فشل</span>';
             } else if (task.done) {
-                li.className = 'status-done'; // منتهية
+                li.className = 'status-done';
+                statusBadge = '<span class="status-badge badge-done">✅ تم</span>';
             } else {
-                li.className = 'status-active'; // نشطة
+                li.className = 'status-active';
             }
 
+            if (!isCurrentLvl) li.className += ' future-level';
+
             const timerBadge = task.hasTimer ? '⏱️' : '';
-            const typeLabel = task.type === 'side' ? '<span class="type-badge" style="color:#00bcd4;">[فرعي]</span>' : '<span class="type-badge" style="color:#ff9800;">[رئيسي]</span>';
-            const statusBadge = task.done ? '<span class="status-badge">✅ مكتمل</span>' : '<span class="status-badge">⏳ جاري</span>';
+            const typeLabel = task.type === 'side' ? '<span style="color:#00bcd4; font-size:0.8em">[فرعي]</span>' : '<span style="color:#ff9800; font-size:0.8em">[رئيسي]</span>';
             
             li.innerHTML = `
                 <div style="display:flex; align-items:center; flex-grow:1;">
                     <span class="lvl-badge">L${task.level}</span>
                     ${typeLabel}
                     ${statusBadge}
-                    <span class="task-text" style="margin-right:15px; flex-grow:1;">${task.text} ${timerBadge}</span>
+                    <span style="margin-right:15px; flex-grow:1;">${task.text} ${timerBadge}</span>
                 </div>
-                <div>
-                    <button onclick="toggleTask(${originalIndex})" style="color:#4CAF50; background:none; font-size:1.2em;">✔</button>
-                    <button onclick="startEdit(${originalIndex})" style="color:#2196F3; background:none; font-size:1.2em;">✎</button>
-                    <button onclick="deleteTask(${originalIndex})" style="color:#f44336; background:none; font-size:1.2em;">✕</button>
+                <div class="task-actions">
+                    <button onclick="toggleTask(${originalIndex}, 'done')" title="إتمام" style="color:#4CAF50;">✔</button>
+                    <button onclick="toggleTask(${originalIndex}, 'fail')" title="فشل" style="color:#f44336;">☠️</button>
+                    <button onclick="startEdit(${originalIndex})" style="color:#2196F3;">✎</button>
+                    <button onclick="deleteTask(${originalIndex})" style="color:#888;">✕</button>
                 </div>
             `;
             list.appendChild(li);
@@ -281,9 +256,9 @@
             if (idx > -1) { dataStore.tasks[idx].text = text; dataStore.tasks[idx].type = type; dataStore.tasks[idx].level = level; }
             cancelEdit();
         } else {
-            dataStore.tasks.push({ text, type, level, done: false, id: Date.now(), hasTimer, timerStart: hasTimer ? Date.now() : null });
+            dataStore.tasks.push({ text, type, level, done: false, failed: false, id: Date.now(), hasTimer, timerStart: hasTimer ? Date.now() : null });
         }
-        document.getElementById('taskInput').value = ""; document.getElementById('timerCheck').checked = false;
+        document.getElementById('taskInput').value = "";
         render(); syncData();
     }
 
@@ -291,21 +266,35 @@
         const task = dataStore.tasks[index];
         document.getElementById('taskInput').value = task.text; document.getElementById('taskType').value = task.type || 'main'; document.getElementById('taskLevelInput').value = task.level || 1;
         isEditing = true; currentEditId = task.id;
-        document.getElementById('mainBtn').innerText = "حفظ"; document.getElementById('mainBtn').style.background = "#2196F3"; document.getElementById('cancelBtn').style.display = 'block';
+        document.getElementById('mainBtn').innerText = "حفظ"; document.getElementById('cancelBtn').style.display = 'block';
     }
 
     function cancelEdit() {
         isEditing = false; currentEditId = null;
-        document.getElementById('taskInput').value = ""; document.getElementById('mainBtn').innerText = "إضافة"; document.getElementById('mainBtn').style.background = "#ff9800"; document.getElementById('cancelBtn').style.display = 'none';
+        document.getElementById('taskInput').value = ""; document.getElementById('mainBtn').innerText = "إضافة"; document.getElementById('cancelBtn').style.display = 'none';
     }
 
     function deleteTask(index) { if(confirm('حذف؟')) { dataStore.tasks.splice(index, 1); render(); syncData(); } }
-    function toggleTask(index) { 
-        dataStore.tasks[index].done = !dataStore.tasks[index].done;
-        if(dataStore.tasks[index].done && dataStore.tasks[index].hasTimer) dataStore.tasks[index].timerEnd = Date.now();
-        else dataStore.tasks[index].timerEnd = null;
+    
+    // دالة موحدة للتحكم بالحالة
+    function toggleTask(index, action) { 
+        if(action === 'done') {
+            dataStore.tasks[index].done = !dataStore.tasks[index].done;
+            dataStore.tasks[index].failed = false; // لا يمكن أن تكون فاشلة ومنجزة معاً
+        } else if (action === 'fail') {
+            dataStore.tasks[index].failed = !dataStore.tasks[index].failed;
+            dataStore.tasks[index].done = false;
+        }
+
+        // إدارة المؤقت
+        if((dataStore.tasks[index].done || dataStore.tasks[index].failed) && dataStore.tasks[index].hasTimer) {
+             dataStore.tasks[index].timerEnd = Date.now();
+        } else {
+             dataStore.tasks[index].timerEnd = null;
+        }
         render(); syncData(); 
     }
+
     async function syncData(msg = "تم التحديث") {
         document.getElementById('statusMsg').innerText = "جاري الحفظ...";
         try { await fetch(API_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataStore) }); document.getElementById('statusMsg').innerText = msg; } 
