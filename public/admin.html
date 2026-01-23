@@ -11,7 +11,6 @@
             --bg-color: #121212;
             --card-bg: #1e1e1e;
             --accent-color: #ff9800;
-            --accent-hover: #ffa726;
             --text-primary: #e0e0e0;
             --text-secondary: #a0a0a0;
             --border-color: #333;
@@ -20,202 +19,121 @@
             --info: #2196F3;
         }
 
-        * { box-sizing: border-box; transition: all 0.2s ease; }
+        * { box-sizing: border-box; }
 
         body { 
             font-family: 'Changa', sans-serif; 
             background: var(--bg-color); 
             color: var(--text-primary); 
             padding: 20px; 
-            display: flex; 
-            justify-content: center; 
-            margin: 0;
-            min-height: 100vh;
+            display: flex; justify-content: center; margin: 0; min-height: 100vh;
         }
 
-        .container { 
-            width: 100%; 
-            max-width: 900px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 20px; 
-        }
+        .container { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 20px; }
 
-        /* --- العناوين والبطاقات --- */
+        /* --- تصميم البطاقات --- */
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 12px; padding: 20px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
-        h2 { margin: 0 0 15px 0; color: var(--accent-color); text-align: center; font-weight: 800; letter-spacing: 1px; }
-
-        /* --- 0. شريط الألعاب (Top Bar) --- */
+        /* --- 0. شريط الألعاب (مدمج بالتصميم الجديد) --- */
         .game-bar {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            background: #151515;
-            border-bottom: 2px solid var(--accent-color);
+            display: flex; align-items: center; gap: 15px; 
+            background: #151515; border-bottom: 2px solid var(--accent-color);
         }
-
-        .game-label { font-weight: bold; color: var(--text-secondary); white-space: nowrap; }
+        .game-label { font-weight: bold; color: var(--accent-color); white-space: nowrap; font-size: 1.1em; }
         
         .game-select { 
-            flex-grow: 1; 
-            background: #0a0a0a; 
-            border: 1px solid var(--border-color); 
-            color: #fff;
-            padding: 10px;
-            border-radius: 6px;
-            font-family: 'Changa';
-            cursor: pointer;
+            flex-grow: 1; background: #0a0a0a; border: 1px solid var(--border-color); 
+            color: #fff; padding: 10px; border-radius: 8px; font-family: 'Changa'; cursor: pointer; outline: none;
         }
-        .game-select:focus { border-color: var(--accent-color); outline: none; }
+        .game-select:focus { border-color: var(--accent-color); }
 
-        .btn-icon {
-            width: 40px; height: 40px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 8px; border: none; cursor: pointer; font-size: 1.2em;
-            background: #2d2d2d; color: #fff;
+        .btn-icon { 
+            width: 42px; height: 42px; border-radius: 8px; border: none; cursor: pointer; 
+            font-size: 1.2em; color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.2s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
         }
-        .btn-icon:hover { transform: translateY(-2px); }
-        .btn-new { background: var(--info); }
-        .btn-del { background: var(--danger); }
+        .btn-icon:active { transform: translateY(2px); box-shadow: none; }
+        .btn-new { background: var(--info); } .btn-new:hover { filter: brightness(1.1); }
+        .btn-del { background: var(--danger); } .btn-del:hover { filter: brightness(1.1); }
 
         /* --- 1. لوحة الإعدادات --- */
-        .settings-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .input-wrapper { display: flex; flex-direction: column; gap: 8px; }
-        .input-label { font-size: 0.85em; color: var(--text-secondary); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .input-label { font-size: 0.85em; color: var(--text-secondary); font-weight: 600; }
         
         .timer-row { display: flex; gap: 10px; }
-        .timer-row input { 
-            width: 100%; text-align: center; background: #0a0a0a; border: 1px solid var(--border-color);
-            padding: 10px; border-radius: 6px; color: var(--accent-color); font-weight: bold;
-        }
+        .timer-row input, select { width: 100%; background: #0a0a0a; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; color: #fff; font-family: 'Changa'; outline: none; }
+        .timer-row input { text-align: center; color: var(--accent-color); font-weight: bold; }
 
-        select { 
-            padding: 10px; background: #0a0a0a; border: 1px solid var(--border-color); 
-            color: #fff; border-radius: 6px; width: 100%; font-family: 'Changa'; cursor: pointer;
-        }
-
-        /* Checkboxes Grid */
+        /* Checkboxes */
         .toggles-area {
-            grid-column: span 2;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 10px;
-            background: #181818;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 5px;
+            grid-column: span 2; display: flex; flex-wrap: wrap; gap: 15px;
+            background: #181818; padding: 15px; border-radius: 8px; margin-top: 5px;
         }
+        .toggle-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9em; user-select: none; }
+        .toggle-item input { width: 18px; height: 18px; accent-color: var(--accent-color); cursor: pointer; }
 
-        .toggle-item {
-            display: flex; align-items: center; gap: 10px;
-            cursor: pointer; font-size: 0.9em; user-select: none;
-            padding: 5px; border-radius: 4px;
-        }
-        .toggle-item:hover { background: #2a2a2a; }
-        .toggle-item input { width: 16px; height: 16px; accent-color: var(--accent-color); cursor: pointer; }
+        .save-btn { grid-column: span 2; background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .save-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
 
-        .save-btn {
-            grid-column: span 2;
-            background: var(--success); color: white; border: none; padding: 10px;
-            border-radius: 6px; font-weight: bold; cursor: pointer; text-align: center;
-            margin-top: 10px;
-        }
-        .save-btn:hover { filter: brightness(1.1); }
-
-        /* --- 2. منطقة الإدخال (Hero Section) --- */
-        .input-area {
-            border-bottom: 4px solid var(--accent-color);
-            background: #252525;
-        }
-
+        /* --- 2. منطقة الإدخال --- */
+        .input-area { border-bottom: 4px solid var(--accent-color); background: #252525; }
         .row-top { display: flex; gap: 12px; margin-bottom: 15px; }
         .row-bottom { display: flex; gap: 12px; align-items: stretch; }
-
-        #taskInput { 
-            flex-grow: 2; padding: 12px; font-size: 1em; 
-            background: #151515; border: 1px solid var(--border-color); 
-            color: white; border-radius: 6px; font-family: 'Changa';
-        }
-        #taskInput:focus { border-color: var(--accent-color); outline: none; }
-
-        #taskLevelInput { 
-            width: 70px; text-align: center; font-size: 1.2em; font-weight: bold; 
-            background: #151515; border: 1px solid var(--border-color); 
-            color: var(--accent-color); border-radius: 6px;
-        }
-
-        #taskType { width: 130px; }
-
-        .btn-action-main {
-            flex-grow: 1; background: var(--accent-color); color: #000;
-            border: none; font-weight: 800; font-size: 1.1em;
-            border-radius: 6px; cursor: pointer; padding: 10px;
-            box-shadow: 0 4px 0 #cc7a00; /* 3D effect */
-            transform: translateY(0);
-        }
+        
+        #taskInput { flex-grow: 2; padding: 12px; font-size: 1em; background: #151515; border: 1px solid var(--border-color); color: white; border-radius: 8px; font-family: 'Changa'; outline: none; }
+        #taskInput:focus { border-color: var(--accent-color); }
+        
+        #taskLevelInput { width: 70px; text-align: center; font-size: 1.2em; font-weight: bold; background: #151515; border: 1px solid var(--border-color); color: var(--accent-color); border-radius: 8px; outline: none; }
+        
+        .btn-action-main { flex-grow: 1; background: var(--accent-color); color: #000; border: none; font-weight: 800; font-size: 1.1em; border-radius: 8px; cursor: pointer; padding: 10px; transition: 0.1s; box-shadow: 0 4px 0 #cc7a00; }
         .btn-action-main:active { transform: translateY(4px); box-shadow: 0 0 0 #cc7a00; }
         
-        .timer-toggle-lbl {
-            background: #333; padding: 0 20px; border-radius: 6px;
-            display: flex; align-items: center; gap: 10px; cursor: pointer; border: 1px solid #444;
-        }
-        .timer-toggle-lbl:hover { background: #3a3a3a; }
+        .timer-toggle-lbl { background: #333; padding: 0 20px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; border: 1px solid #444; }
 
-        /* --- 3. القائمة (The List) --- */
-        ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+        /* --- 3. القائمة والأزرار (3D Buttons) --- */
+        ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
         
         li {
-            background: #222;
-            padding: 10px 15px;
-            border-radius: 8px;
+            background: #222; padding: 10px 15px; border-radius: 12px;
             display: flex; justify-content: space-between; align-items: center;
-            border-right: 5px solid transparent;
-            position: relative;
-            overflow: hidden;
+            border: 1px solid #333; transition: all 0.3s ease; position: relative;
         }
-        li:hover { transform: translateX(-5px); background: #282828; }
-
-        /* Status Colors */
-        li.status-active { background: linear-gradient(90deg, #222 0%, #2e261e 100%); border-right-color: var(--accent-color); }
-        li.status-done { background: #1a1a1a; border-right-color: var(--success); opacity: 0.6; }
-        li.status-done .task-text { text-decoration: line-through; color: #666; }
-        li.status-failed { background: #1a0f0f; border-right-color: var(--danger); opacity: 0.8; }
-        li.status-failed .task-text { text-decoration: line-through; color: #d32f2f; }
         
-        .task-info { display: flex; align-items: center; gap: 12px; flex-grow: 1; }
-        .task-text { font-size: 1.1em; font-weight: 600; }
-        
-        /* Badges */
-        .badge { padding: 3px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
-        .b-lvl { background: #333; color: #fff; border: 1px solid #555; font-family: monospace; }
-        .b-main { color: var(--accent-color); background: rgba(255, 152, 0, 0.1); border: 1px solid rgba(255, 152, 0, 0.3); }
-        .b-side { color: var(--info); background: rgba(33, 150, 243, 0.1); border: 1px solid rgba(33, 150, 243, 0.3); }
-        .b-status { background: #000; color: #fff; }
+        .actions { display: flex; gap: 10px; }
 
-        /* Action Buttons */
-        .actions { display: flex; gap: 6px; }
         .act-btn {
-            width: 38px; height: 38px; border-radius: 6px; border: none; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 1.2em;
-            background: #333; color: #aaa;
+            width: 42px; height: 42px; border-radius: 10px; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 1.4em; color: white;
+            transition: all 0.1s ease; position: relative;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
         }
-        .act-btn:hover { color: #fff; transform: scale(1.1); }
-        .btn-done:hover { background: var(--success); }
-        .btn-fail:hover { background: var(--danger); }
-        .btn-edit:hover { background: var(--info); }
-        .btn-del:hover { background: #555; color: var(--danger); }
+        .act-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+
+        .btn-done { background: linear-gradient(180deg, #66bb6a 0%, #43a047 100%); box-shadow: 0 4px 0 #2e7d32; }
+        .btn-fail { background: linear-gradient(180deg, #ef5350 0%, #d32f2f 100%); box-shadow: 0 4px 0 #c62828; }
+        .btn-edit { background: linear-gradient(180deg, #42a5f5 0%, #1976d2 100%); box-shadow: 0 4px 0 #1565c0; }
+        .btn-del { background: linear-gradient(180deg, #424242 0%, #212121 100%); box-shadow: 0 4px 0 #000; }
+
+        /* حالات المهمة */
+        li.status-active { border-right: 5px solid var(--accent-color); background: linear-gradient(90deg, #222 0%, #2a221a 100%); }
+        li.status-done { opacity: 0.6; border-right: 5px solid var(--success); filter: grayscale(50%); }
+        li.status-done .task-text { text-decoration: line-through; color: #888; }
+        li.status-failed { opacity: 0.8; border-right: 5px solid var(--danger); background: #2a1a1a; }
+        li.status-failed .task-text { text-decoration: line-through; color: #ef5350; }
+
+        .task-info { display: flex; align-items: center; gap: 12px; flex-grow: 1; }
+        .task-text { font-size: 1.1em; font-weight: 600; color: #eee; }
+        
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75em; font-weight: bold; letter-spacing: 0.5px; }
+        .b-lvl { background: #333; color: #ffeb3b; border: 1px solid #555; font-family: monospace; }
+        .b-main { background: rgba(255, 152, 0, 0.15); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.3); }
+        .b-side { background: rgba(33, 150, 243, 0.15); color: #2196F3; border: 1px solid rgba(33, 150, 243, 0.3); }
 
     </style>
 </head>
@@ -234,7 +152,6 @@
 
     <div class="card settings-panel">
         <div class="settings-grid">
-            
             <div class="input-wrapper">
                 <label class="input-label">⏱️ مؤقت الظهور / الاختفاء</label>
                 <div class="timer-row">
@@ -242,15 +159,13 @@
                     <input type="number" id="visibleDur" value="15" placeholder="ظهور">
                 </div>
             </div>
-
             <div class="input-wrapper">
-                <label class="input-label">👁️ وضع العرض (Visibility Mode)</label>
+                <label class="input-label">👁️ وضع العرض</label>
                 <select id="visMode">
                     <option value="auto">تلقائي (يظهر ويختفي)</option>
                     <option value="always">ثابت (دائم الظهور)</option>
                 </select>
             </div>
-
             <div class="toggles-area">
                 <label class="toggle-item"><input type="checkbox" id="autoLevelToggle" checked> Auto Level-Up</label>
                 <label class="toggle-item"><input type="checkbox" id="hideXPToggle"> Hide XP Bar</label>
@@ -258,14 +173,13 @@
                 <label class="toggle-item"><input type="checkbox" id="particlesToggle"> Enable Particles</label>
                 <label class="toggle-item"><input type="checkbox" id="glitchToggle"> Enable Glitch</label>
             </div>
-
             <button class="save-btn" onclick="saveSettings()">💾 حفظ وتحديث الإعدادات</button>
         </div>
     </div>
 
     <div class="card input-area">
         <div class="row-top">
-            <select id="taskType">
+            <select id="taskType" style="width:140px;">
                 <option value="main">⭐ رئيسية</option>
                 <option value="side">🔹 جانبية</option>
             </select>
@@ -300,9 +214,7 @@
         },
         presets: {}
     };
-    
-    let isEditing = false; 
-    let currentEditId = null;
+    let isEditing = false; let currentEditId = null;
 
     // --- Core Functions ---
     async function loadData() {
@@ -314,28 +226,24 @@
             dataStore.presets = rawData.presets || {};
             if(!isEditing) dataStore.tasks = rawData.tasks || [];
             
-            updateUI();
-            updateGameDropdown();
+            updateUI(); updateGameDropdown();
             if(!isEditing) render();
         } catch(e) { console.error(e); }
     }
 
+    // --- Game Manager Logic (تم دمجها مجدداً) ---
     function updateGameDropdown() {
         const select = document.getElementById('gameSelector');
-        const currentSelection = dataStore.settings.activeGame || "";
+        const currentSelection = dataStore.settings.activeGame || "Default";
         
-        const games = new Set();
-        games.add("Default");
-        Object.keys(dataStore.presets).forEach(key => {
-            const name = key.split('_')[0];
-            if(name) games.add(name);
-        });
+        const games = new Set(); games.add("Default");
+        Object.keys(dataStore.presets).forEach(key => { const name = key.split('_')[0]; if(name) games.add(name); });
 
         if(select.options.length !== games.size + 1) { 
             select.innerHTML = '<option value="">-- تحميل الحملة --</option>';
-            games.forEach(g => {
-                const opt = document.createElement('option');
-                opt.value = g; opt.innerText = g; select.appendChild(opt);
+            games.forEach(g => { 
+                const opt = document.createElement('option'); 
+                opt.value = g; opt.innerText = g; select.appendChild(opt); 
             });
         }
         select.value = currentSelection;
@@ -344,24 +252,24 @@
     function createNewGame() {
         const name = prompt("اسم اللعبة الجديدة:");
         if(!name) return;
-        saveCurrentStateToPresets();
-        dataStore.settings.activeGame = name;
-        dataStore.settings.currentLevel = 1;
-        dataStore.tasks = [];
-        syncData(`تم إنشاء: ${name}`);
-        render();
+        saveCurrentStateToPresets(); // Save old game
+        dataStore.settings.activeGame = name; 
+        dataStore.settings.currentLevel = 1; 
+        dataStore.tasks = []; // Reset tasks
+        syncData(`تم إنشاء: ${name}`); render();
     }
 
     function switchGame() {
         const selectedGame = document.getElementById('gameSelector').value;
         if(!selectedGame || selectedGame === dataStore.settings.activeGame) return;
-        saveCurrentStateToPresets();
-        dataStore.settings.activeGame = selectedGame;
+        saveCurrentStateToPresets(); // Save old game
+        dataStore.settings.activeGame = selectedGame; 
         dataStore.settings.currentLevel = 1;
+        
+        // Load Level 1 of new game
         const key = `${selectedGame}_1`;
         dataStore.tasks = dataStore.presets[key] || [];
-        syncData(`تم الانتقال لـ: ${selectedGame}`);
-        render();
+        syncData(`تم الانتقال لـ: ${selectedGame}`); render();
     }
 
     function deleteGame() {
@@ -380,6 +288,7 @@
         dataStore.presets[key] = JSON.parse(JSON.stringify(dataStore.tasks));
     }
 
+    // --- UI Logic ---
     function updateUI() {
         document.getElementById('visMode').value = dataStore.settings.visibilityMode;
         document.getElementById('visibleDur').value = dataStore.settings.visibleDuration;
@@ -406,7 +315,13 @@
 
     function render() {
         const list = document.getElementById('taskList'); list.innerHTML = "";
-        const sortedTasks = [...dataStore.tasks].sort((a, b) => a.level - b.level);
+        // Sort: Current Level First
+        const sortedTasks = [...dataStore.tasks].sort((a, b) => {
+            const curLvl = dataStore.settings.currentLevel || 1;
+            if(a.level === curLvl && b.level !== curLvl) return -1;
+            if(a.level !== curLvl && b.level === curLvl) return 1;
+            return a.level - b.level;
+        });
         
         sortedTasks.forEach((task) => {
             const originalIndex = dataStore.tasks.findIndex(t => t.id === task.id);
@@ -414,10 +329,8 @@
             const isCurrentLvl = task.level == (dataStore.settings.currentLevel || 1);
             
             let statusClass = 'status-active';
-            let statusBadge = '<span class="badge b-status" style="background:#ff9800;color:black">Running</span>';
-            
-            if (task.failed) { statusClass = 'status-failed'; statusBadge = '<span class="badge b-status" style="background:#f44336">Failed</span>'; }
-            else if (task.done) { statusClass = 'status-done'; statusBadge = '<span class="badge b-status" style="background:#4CAF50">Done</span>'; }
+            if (task.failed) statusClass = 'status-failed';
+            else if (task.done) statusClass = 'status-done';
 
             li.className = statusClass;
             if (!isCurrentLvl) li.style.opacity = "0.4";
@@ -433,9 +346,8 @@
                     <button class="act-btn btn-done" onclick="toggleTask(${originalIndex}, 'done')" title="Done">✔</button>
                 </div>
                 <div class="task-info">
-                    <span class="badge b-lvl">${task.level}</span>
+                    <span class="badge b-lvl">L${task.level}</span>
                     ${typeBadge}
-                    ${statusBadge}
                     <span class="task-text">${task.text} ${timerIcon}</span>
                 </div>
             `;
@@ -448,29 +360,19 @@
         const lvl = parseInt(document.getElementById('taskLevelInput').value);
         const type = document.getElementById('taskType').value;
         const hasTimer = document.getElementById('timerCheck').checked;
-        
         if(!text) return;
 
         if (isEditing && currentEditId !== null) {
             const idx = dataStore.tasks.findIndex(t => t.id === currentEditId);
-            if (idx > -1) { 
-                dataStore.tasks[idx].text = text; 
-                dataStore.tasks[idx].level = lvl; 
-                dataStore.tasks[idx].type = type; 
-            }
+            if (idx > -1) { dataStore.tasks[idx].text = text; dataStore.tasks[idx].level = lvl; dataStore.tasks[idx].type = type; }
             cancelEdit();
         } else {
-            dataStore.tasks.push({
-                text, level: lvl, type, 
-                done: false, failed: false, 
-                id: Date.now(), 
-                hasTimer, timerStart: hasTimer ? Date.now() : null
-            });
+            dataStore.tasks.push({ text, level: lvl, type, done: false, failed: false, id: Date.now(), hasTimer, timerStart: hasTimer ? Date.now() : null });
         }
         
         document.getElementById('taskInput').value = "";
         document.getElementById('timerCheck').checked = false;
-        saveCurrentStateToPresets();
+        saveCurrentStateToPresets(); // Save to current game slot
         syncData(); render();
     }
 
@@ -503,29 +405,18 @@
     }
 
     function deleteTask(index) {
-        if(confirm("حذف؟")) {
-            dataStore.tasks.splice(index, 1);
-            saveCurrentStateToPresets();
-            syncData(); render();
-        }
+        if(confirm("حذف؟")) { dataStore.tasks.splice(index, 1); saveCurrentStateToPresets(); syncData(); render(); }
     }
 
     function handleEnter(e) { if(e.key === 'Enter') submitTask(); }
 
     async function syncData(msg = "Updated") {
         document.getElementById('statusMsg').innerText = "Saving...";
-        try { 
-            await fetch(API_URL, { 
-                method: 'PUT', headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(dataStore) 
-            }); 
-            document.getElementById('statusMsg').innerText = msg;
-        } catch(e) { document.getElementById('statusMsg').innerText = "Error"; }
+        try { await fetch(API_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataStore) }); document.getElementById('statusMsg').innerText = msg; } catch(e) { document.getElementById('statusMsg').innerText = "Error"; }
     }
 
     setInterval(() => { if(!isEditing) loadData(); }, 3000);
     loadData();
-
 </script>
 
 </body>
