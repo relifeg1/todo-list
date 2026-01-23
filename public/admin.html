@@ -31,7 +31,6 @@
 
         .container { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 20px; }
 
-        /* --- تصميم البطاقات --- */
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -39,64 +38,52 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
-        /* --- 0. شريط الألعاب (مدمج بالتصميم الجديد) --- */
+        /* --- شريط الألعاب --- */
         .game-bar {
             display: flex; align-items: center; gap: 15px; 
             background: #151515; border-bottom: 2px solid var(--accent-color);
         }
         .game-label { font-weight: bold; color: var(--accent-color); white-space: nowrap; font-size: 1.1em; }
-        
         .game-select { 
             flex-grow: 1; background: #0a0a0a; border: 1px solid var(--border-color); 
             color: #fff; padding: 10px; border-radius: 8px; font-family: 'Changa'; cursor: pointer; outline: none;
         }
-        .game-select:focus { border-color: var(--accent-color); }
-
         .btn-icon { 
             width: 42px; height: 42px; border-radius: 8px; border: none; cursor: pointer; 
             font-size: 1.2em; color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.2s;
             box-shadow: 0 4px 0 rgba(0,0,0,0.2);
         }
         .btn-icon:active { transform: translateY(2px); box-shadow: none; }
-        .btn-new { background: var(--info); } .btn-new:hover { filter: brightness(1.1); }
-        .btn-del { background: var(--danger); } .btn-del:hover { filter: brightness(1.1); }
+        .btn-new { background: var(--info); }
+        .btn-del { background: var(--danger); }
 
-        /* --- 1. لوحة الإعدادات --- */
+        /* --- الإعدادات --- */
         .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .input-wrapper { display: flex; flex-direction: column; gap: 8px; }
         .input-label { font-size: 0.85em; color: var(--text-secondary); font-weight: 600; }
-        
         .timer-row { display: flex; gap: 10px; }
         .timer-row input, select { width: 100%; background: #0a0a0a; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; color: #fff; font-family: 'Changa'; outline: none; }
         .timer-row input { text-align: center; color: var(--accent-color); font-weight: bold; }
-
-        /* Checkboxes */
         .toggles-area {
             grid-column: span 2; display: flex; flex-wrap: wrap; gap: 15px;
             background: #181818; padding: 15px; border-radius: 8px; margin-top: 5px;
         }
         .toggle-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9em; user-select: none; }
         .toggle-item input { width: 18px; height: 18px; accent-color: var(--accent-color); cursor: pointer; }
-
         .save-btn { grid-column: span 2; background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
-        .save-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
 
-        /* --- 2. منطقة الإدخال --- */
+        /* --- الإدخال --- */
         .input-area { border-bottom: 4px solid var(--accent-color); background: #252525; }
         .row-top { display: flex; gap: 12px; margin-bottom: 15px; }
         .row-bottom { display: flex; gap: 12px; align-items: stretch; }
-        
         #taskInput { flex-grow: 2; padding: 12px; font-size: 1em; background: #151515; border: 1px solid var(--border-color); color: white; border-radius: 8px; font-family: 'Changa'; outline: none; }
         #taskInput:focus { border-color: var(--accent-color); }
-        
         #taskLevelInput { width: 70px; text-align: center; font-size: 1.2em; font-weight: bold; background: #151515; border: 1px solid var(--border-color); color: var(--accent-color); border-radius: 8px; outline: none; }
-        
-        .btn-action-main { flex-grow: 1; background: var(--accent-color); color: #000; border: none; font-weight: 800; font-size: 1.1em; border-radius: 8px; cursor: pointer; padding: 10px; transition: 0.1s; box-shadow: 0 4px 0 #cc7a00; }
-        .btn-action-main:active { transform: translateY(4px); box-shadow: 0 0 0 #cc7a00; }
-        
+        .btn-action-main { flex-grow: 1; background: var(--accent-color); color: #000; border: none; font-weight: 800; font-size: 1.1em; border-radius: 8px; cursor: pointer; padding: 10px; box-shadow: 0 4px 0 #cc7a00; }
+        .btn-action-main:active { transform: translateY(4px); box-shadow: none; }
         .timer-toggle-lbl { background: #333; padding: 0 20px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; border: 1px solid #444; }
 
-        /* --- 3. القائمة والأزرار (3D Buttons) --- */
+        /* --- القائمة (التعديل هنا) --- */
         ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
         
         li {
@@ -104,8 +91,18 @@
             display: flex; justify-content: space-between; align-items: center;
             border: 1px solid #333; transition: all 0.3s ease; position: relative;
         }
-        
-        .actions { display: flex; gap: 10px; }
+
+        /* ترتيب العناصر: النص يمين، الأزرار يسار */
+        .task-info { 
+            display: flex; align-items: center; gap: 12px; 
+            flex-grow: 1; /* يأخذ المساحة المتبقية */
+            justify-content: flex-start; /* يبدأ من اليمين */
+        }
+
+        .actions { 
+            display: flex; gap: 8px; 
+            margin-right: 15px; /* مسافة فاصلة عن النص */
+        }
 
         .act-btn {
             width: 42px; height: 42px; border-radius: 10px; border: none; cursor: pointer;
@@ -120,16 +117,13 @@
         .btn-edit { background: linear-gradient(180deg, #42a5f5 0%, #1976d2 100%); box-shadow: 0 4px 0 #1565c0; }
         .btn-del { background: linear-gradient(180deg, #424242 0%, #212121 100%); box-shadow: 0 4px 0 #000; }
 
-        /* حالات المهمة */
         li.status-active { border-right: 5px solid var(--accent-color); background: linear-gradient(90deg, #222 0%, #2a221a 100%); }
         li.status-done { opacity: 0.6; border-right: 5px solid var(--success); filter: grayscale(50%); }
         li.status-done .task-text { text-decoration: line-through; color: #888; }
         li.status-failed { opacity: 0.8; border-right: 5px solid var(--danger); background: #2a1a1a; }
         li.status-failed .task-text { text-decoration: line-through; color: #ef5350; }
 
-        .task-info { display: flex; align-items: center; gap: 12px; flex-grow: 1; }
         .task-text { font-size: 1.1em; font-weight: 600; color: #eee; }
-        
         .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75em; font-weight: bold; letter-spacing: 0.5px; }
         .b-lvl { background: #333; color: #ffeb3b; border: 1px solid #555; font-family: monospace; }
         .b-main { background: rgba(255, 152, 0, 0.15); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.3); }
@@ -216,35 +210,26 @@
     };
     let isEditing = false; let currentEditId = null;
 
-    // --- Core Functions ---
     async function loadData() {
         try {
             const res = await fetch(API_URL);
             const rawData = await res.json();
-            
             dataStore.settings = { ...dataStore.settings, ...rawData.settings };
             dataStore.presets = rawData.presets || {};
             if(!isEditing) dataStore.tasks = rawData.tasks || [];
-            
             updateUI(); updateGameDropdown();
             if(!isEditing) render();
         } catch(e) { console.error(e); }
     }
 
-    // --- Game Manager Logic (تم دمجها مجدداً) ---
     function updateGameDropdown() {
         const select = document.getElementById('gameSelector');
-        const currentSelection = dataStore.settings.activeGame || "Default";
-        
+        const currentSelection = dataStore.settings.activeGame || "";
         const games = new Set(); games.add("Default");
         Object.keys(dataStore.presets).forEach(key => { const name = key.split('_')[0]; if(name) games.add(name); });
-
         if(select.options.length !== games.size + 1) { 
             select.innerHTML = '<option value="">-- تحميل الحملة --</option>';
-            games.forEach(g => { 
-                const opt = document.createElement('option'); 
-                opt.value = g; opt.innerText = g; select.appendChild(opt); 
-            });
+            games.forEach(g => { const opt = document.createElement('option'); opt.value = g; opt.innerText = g; select.appendChild(opt); });
         }
         select.value = currentSelection;
     }
@@ -252,23 +237,15 @@
     function createNewGame() {
         const name = prompt("اسم اللعبة الجديدة:");
         if(!name) return;
-        saveCurrentStateToPresets(); // Save old game
-        dataStore.settings.activeGame = name; 
-        dataStore.settings.currentLevel = 1; 
-        dataStore.tasks = []; // Reset tasks
+        saveCurrentStateToPresets(); dataStore.settings.activeGame = name; dataStore.settings.currentLevel = 1; dataStore.tasks = [];
         syncData(`تم إنشاء: ${name}`); render();
     }
 
     function switchGame() {
         const selectedGame = document.getElementById('gameSelector').value;
         if(!selectedGame || selectedGame === dataStore.settings.activeGame) return;
-        saveCurrentStateToPresets(); // Save old game
-        dataStore.settings.activeGame = selectedGame; 
-        dataStore.settings.currentLevel = 1;
-        
-        // Load Level 1 of new game
-        const key = `${selectedGame}_1`;
-        dataStore.tasks = dataStore.presets[key] || [];
+        saveCurrentStateToPresets(); dataStore.settings.activeGame = selectedGame; dataStore.settings.currentLevel = 1;
+        const key = `${selectedGame}_1`; dataStore.tasks = dataStore.presets[key] || [];
         syncData(`تم الانتقال لـ: ${selectedGame}`); render();
     }
 
@@ -277,8 +254,7 @@
         if(game === "Default" || !game) return alert("لا يمكن حذف الافتراضي");
         if(!confirm(`حذف ${game}؟`)) return;
         Object.keys(dataStore.presets).forEach(key => { if(key.startsWith(game + "_")) delete dataStore.presets[key]; });
-        dataStore.settings.activeGame = "Default"; dataStore.tasks = [];
-        syncData("تم الحذف");
+        dataStore.settings.activeGame = "Default"; dataStore.tasks = []; syncData("تم الحذف");
     }
 
     function saveCurrentStateToPresets() {
@@ -288,7 +264,6 @@
         dataStore.presets[key] = JSON.parse(JSON.stringify(dataStore.tasks));
     }
 
-    // --- UI Logic ---
     function updateUI() {
         document.getElementById('visMode').value = dataStore.settings.visibilityMode;
         document.getElementById('visibleDur').value = dataStore.settings.visibleDuration;
@@ -315,13 +290,7 @@
 
     function render() {
         const list = document.getElementById('taskList'); list.innerHTML = "";
-        // Sort: Current Level First
-        const sortedTasks = [...dataStore.tasks].sort((a, b) => {
-            const curLvl = dataStore.settings.currentLevel || 1;
-            if(a.level === curLvl && b.level !== curLvl) return -1;
-            if(a.level !== curLvl && b.level === curLvl) return 1;
-            return a.level - b.level;
-        });
+        const sortedTasks = [...dataStore.tasks].sort((a, b) => a.level - b.level);
         
         sortedTasks.forEach((task) => {
             const originalIndex = dataStore.tasks.findIndex(t => t.id === task.id);
@@ -339,16 +308,16 @@
             const timerIcon = task.hasTimer ? '⏱️' : '';
 
             li.innerHTML = `
-                <div class="actions">
-                    <button class="act-btn btn-del" onclick="deleteTask(${originalIndex})" title="Delete">✕</button>
-                    <button class="act-btn btn-edit" onclick="startEdit(${originalIndex})" title="Edit">✎</button>
-                    <button class="act-btn btn-fail" onclick="toggleTask(${originalIndex}, 'fail')" title="Fail">☠️</button>
-                    <button class="act-btn btn-done" onclick="toggleTask(${originalIndex}, 'done')" title="Done">✔</button>
-                </div>
                 <div class="task-info">
                     <span class="badge b-lvl">L${task.level}</span>
                     ${typeBadge}
                     <span class="task-text">${task.text} ${timerIcon}</span>
+                </div>
+                <div class="actions">
+                    <button class="act-btn btn-done" onclick="toggleTask(${originalIndex}, 'done')" title="Done">✔</button>
+                    <button class="act-btn btn-fail" onclick="toggleTask(${originalIndex}, 'fail')" title="Fail">☠️</button>
+                    <button class="act-btn btn-edit" onclick="startEdit(${originalIndex})" title="Edit">✎</button>
+                    <button class="act-btn btn-del" onclick="deleteTask(${originalIndex})" title="Delete">✕</button>
                 </div>
             `;
             list.appendChild(li);
@@ -372,8 +341,7 @@
         
         document.getElementById('taskInput').value = "";
         document.getElementById('timerCheck').checked = false;
-        saveCurrentStateToPresets(); // Save to current game slot
-        syncData(); render();
+        saveCurrentStateToPresets(); syncData(); render();
     }
 
     function startEdit(index) {
