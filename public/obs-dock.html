@@ -2,279 +2,104 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OBS Pro Dock</title>
-    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>OBS Dock - nPoint</title>
+    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: 'Changa', sans-serif; 
-            background-color: #1c1c1c; 
-            color: #eee; 
-            margin: 0; padding: 10px;
-            font-size: 13px;
-            overflow-x: hidden;
-        }
-
-        /* --- منطقة الإدخال (مضغوطة) --- */
-        .input-container {
-            background: #2b2b2b; padding: 8px; border-radius: 6px; border: 1px solid #444; margin-bottom: 10px;
-        }
-        .row-top { margin-bottom: 5px; }
-        .row-bottom { display: flex; gap: 5px; align-items: center; }
-
-        input[type="text"] {
-            width: 100%; padding: 6px; box-sizing: border-box;
-            background: #111; border: 1px solid #555; color: white;
-            border-radius: 4px; font-family: 'Changa'; outline: none;
-        }
-
-        input[type="number"] {
-            width: 40px; padding: 5px; text-align: center;
-            background: #111; border: 1px solid #555; color: #ffeb3b; font-weight: bold; border-radius: 4px;
-        }
-
-        select {
-            flex-grow: 1; padding: 5px;
-            background: #111; border: 1px solid #555; color: #aaa; border-radius: 4px; font-family: 'Changa';
-        }
-
-        /* زر المؤقت */
-        .timer-toggle {
-            cursor: pointer; padding: 5px; border-radius: 4px; background: #333; border: 1px solid #555; user-select: none;
-        }
-        .timer-toggle.active { background: #ff9800; color: black; border-color: #ff9800; }
-
-        button#addBtn {
-            background: #ff9800; color: black; border: none;
-            padding: 5px 12px; font-weight: bold; border-radius: 4px; cursor: pointer;
-        }
-        button#addBtn:hover { background: #e68900; }
-
-        /* --- القائمة --- */
-        ul { list-style: none; padding: 0; margin: 0; padding-bottom: 20px;}
-        
-        li {
-            background: #252525; padding: 6px 8px; margin-bottom: 5px;
-            border-radius: 4px; border-right: 3px solid #555;
-            display: flex; flex-direction: column; gap: 4px;
-            transition: all 0.2s;
-        }
-
-        /* الصف العلوي للمهمة (العنوان) */
-        .li-top { display: flex; justify-content: space-between; align-items: center; }
-        .task-text { font-weight: 600; font-size: 1.1em; word-break: break-all; }
-        .badges { display: flex; gap: 4px; font-size: 0.75em; }
-        .badge { padding: 1px 4px; border-radius: 3px; background: #333; color: #ccc; }
-        .badge-lvl { color: #ffeb3b; border: 1px solid #555; }
-        
-        /* الصف السفلي للمهمة (الأزرار) */
-        .li-actions { display: flex; gap: 5px; justify-content: flex-end; margin-top: 2px; }
-        .action-btn {
-            background: #333; border: 1px solid #444; color: #ccc;
-            padding: 2px 8px; border-radius: 3px; cursor: pointer; font-size: 0.9em; flex-grow: 1;
-        }
-        .btn-done:hover { background: #4CAF50; color: white; border-color: #4CAF50; }
-        .btn-fail:hover { background: #f44336; color: white; border-color: #f44336; }
-        .btn-del:hover { background: #d32f2f; color: white; border-color: #d32f2f; }
-
-        /* حالات المهمة */
-        li.done { border-right-color: #4CAF50; background: #1a2e1b; opacity: 0.8; }
-        li.done .task-text { text-decoration: line-through; color: #888; }
-        
-        li.failed { border-right-color: #f44336; background: #2e1a1a; opacity: 0.8; }
-        li.failed .task-text { text-decoration: line-through; color: #f44336; }
-
-        li.current-level { border-left: 2px solid #ff9800; } /* تمييز مهام اللفل الحالي */
-
-        #status { text-align: center; font-size: 0.8em; color: #666; margin-top: 5px; }
+        body { font-family: 'Changa', sans-serif; background: #1c1c1c; color: #eee; margin: 0; padding: 10px; font-size: 13px; }
+        .row { display: flex; gap: 5px; margin-bottom: 5px; }
+        input, select, button { background: #333; border: 1px solid #444; color: white; padding: 6px; border-radius: 4px; font-family: 'Changa'; width: 100%; box-sizing: border-box; }
+        .btn-add { background: #ff9800; color: black; font-weight: bold; cursor: pointer; }
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { background: #252525; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border-right: 3px solid #555; }
+        li.done { border-color: #4CAF50; opacity: 0.6; text-decoration: line-through; }
+        li.current { border-left: 2px solid #ff9800; }
+        .btns { display: flex; gap: 2px; }
+        .btns button { width: 24px; padding: 0; }
+        #status { font-size: 0.8em; color: #666; text-align: center; margin-top: 5px; }
     </style>
 </head>
 <body>
-
-    <div class="input-container">
-        <div class="row-top">
-            <input type="text" id="taskInput" placeholder="عنوان المهمة..." onkeypress="handleEnter(event)">
-        </div>
-        <div class="row-bottom">
-            <input type="number" id="lvlInput" title="اللفل" value="1">
-            <select id="typeInput">
-                <option value="main">رئيسية</option>
-                <option value="side">جانبية</option>
-            </select>
-            <div id="timerToggle" class="timer-toggle" onclick="toggleTimerOption()" title="مؤقت">⏱️</div>
-            <button id="addBtn" onclick="addTask()">إضافة</button>
-        </div>
+    <div class="row"><input type="text" id="tIn" placeholder="مهمة جديدة..."></div>
+    <div class="row">
+        <select id="tType"><option value="main">رئيسية</option><option value="side">جانبية</option></select>
+        <input type="number" id="tLvl" value="1" style="width:50px;">
+        <button class="btn-add" onclick="add()">+</button>
     </div>
-
     <ul id="list"></ul>
-    <div id="status">جاري الاتصال...</div>
+    <div id="status">Connecting...</div>
 
 <script>
-    const API_URL = "/api/data";
-    let currentData = { tasks: [], settings: {} };
-    let timerEnabled = false;
+    // ✅ رابط nPoint
+    const API_URL = "https://api.npoint.io/9ff5d39f969a4b4840ba";
 
-    // تبديل شكل زر المؤقت
-    function toggleTimerOption() {
-        timerEnabled = !timerEnabled;
-        const btn = document.getElementById('timerToggle');
-        if(timerEnabled) btn.classList.add('active');
-        else btn.classList.remove('active');
-    }
+    let store = { tasks: [], settings: { currentLevel: 1 }, presets: {} };
 
-    // جلب البيانات
     async function load() {
         try {
-            const res = await fetch(API_URL);
-            const data = await res.json();
-            
-            // دمج البيانات
-            if (data.tasks) {
-                currentData = data;
-            } else if (Array.isArray(data)) {
-                currentData.tasks = data;
-                if(!currentData.settings) currentData.settings = {};
-            }
-
-            render();
-        } catch(e) { document.getElementById('status').innerText = "خطأ اتصال"; }
+            const r = await fetch(API_URL);
+            const d = await r.json();
+            store = { ...store, ...d };
+            if(!store.tasks) store.tasks = [];
+            draw();
+            document.getElementById('status').innerText = "Online";
+        } catch(e) { document.getElementById('status').innerText = "Error"; }
     }
 
-    // عرض القائمة
-    function render() {
-        const list = document.getElementById('list');
-        list.innerHTML = "";
+    async function push() {
+        // تحديث البريسيت (الحفظ التلقائي للألعاب)
+        const key = `${store.settings.activeGame || 'Default'}_${store.settings.currentLevel || 1}`;
+        store.presets[key] = store.tasks;
         
-        // ترتيب: اللفل الحالي في الأعلى
-        const currentLevel = currentData.settings.currentLevel || 1;
-        
-        // تحديث خانة الإدخال للفل الحالي تلقائياً (فقط إذا كانت القائمة فارغة لتجنب الإزعاج)
-        // لكن هنا سنجعله ذكياً: إذا لم يغير المستخدم الرقم، نحدثه.
-        const lvlInput = document.getElementById('lvlInput');
-        if(document.activeElement !== lvlInput) {
-             // lvlInput.value = currentLevel; // (اختياري: فعل هذا السطر لو تريد الرقم يتغير تلقائياً دائماً)
-        }
+        await fetch(API_URL, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(store) });
+        load();
+    }
 
-        // فرز المهام: اللفل الحالي أولاً، ثم حسب الترتيب
-        const sortedTasks = [...currentData.tasks].sort((a, b) => {
-            if (a.level === currentLevel && b.level !== currentLevel) return -1;
-            if (a.level !== currentLevel && b.level === currentLevel) return 1;
+    function draw() {
+        const ul = document.getElementById('list'); ul.innerHTML = "";
+        const curLvl = store.settings.currentLevel || 1;
+        document.getElementById('tLvl').value = curLvl; // تحديث خانة اللفل تلقائياً
+
+        const sorted = [...store.tasks].sort((a,b) => {
+            if(a.level == curLvl && b.level != curLvl) return -1;
+            if(a.level != curLvl && b.level == curLvl) return 1;
             return a.level - b.level;
         });
 
-        sortedTasks.forEach((task) => {
-            const realIndex = currentData.tasks.findIndex(t => t.id === task.id);
+        sorted.forEach((t, idx) => {
+            const realIdx = store.tasks.findIndex(x => x.id === t.id);
             const li = document.createElement('li');
+            if(t.done) li.classList.add('done');
+            if(t.level == curLvl) li.classList.add('current');
             
-            // الكلاسات
-            if(task.done) li.classList.add('done');
-            else if(task.failed) li.classList.add('failed');
-            if(task.level == currentLevel) li.classList.add('current-level');
-
-            // الشارات
-            const typeBadge = task.type === 'side' ? '<span class="badge" style="color:#00bcd4">S</span>' : '<span class="badge" style="color:#ff9800">M</span>';
-            const timerBadge = task.hasTimer ? '<span class="badge">⏱️</span>' : '';
-            const statusText = task.failed ? "فشل" : (task.done ? "تم" : "");
-
-            li.innerHTML = `
-                <div class="li-top">
-                    <div class="badges">
-                        <span class="badge badge-lvl">${task.level}</span>
-                        ${typeBadge}
-                        ${timerBadge}
-                    </div>
-                    <span class="task-text">${task.text}</span>
-                </div>
-                <div class="li-actions">
-                    <button class="action-btn btn-done" onclick="setStatus(${realIndex}, 'done')" title="إنجاز">✔</button>
-                    <button class="action-btn btn-fail" onclick="setStatus(${realIndex}, 'fail')" title="فشل">☠️</button>
-                    <button class="action-btn btn-del" onclick="del(${realIndex})" title="حذف">✕</button>
-                </div>
-            `;
-            list.appendChild(li);
+            li.innerHTML = `<span>${t.text}</span>
+                <div class="btns">
+                    <button style="background:#4CAF50" onclick="tog(${realIdx},'d')">✔</button>
+                    <button style="background:#f44336" onclick="del(${realIdx})">✕</button>
+                </div>`;
+            ul.appendChild(li);
         });
-        document.getElementById('status').innerText = `جاهز (${currentData.tasks.length} مهام)`;
     }
 
-    // إضافة مهمة
-    function addTask() {
-        const input = document.getElementById('taskInput');
-        const text = input.value.trim();
-        const level = parseInt(document.getElementById('lvlInput').value) || 1;
-        const type = document.getElementById('typeInput').value;
-
-        if(!text) return;
-
-        currentData.tasks.push({
-            text: text,
-            type: type,
-            level: level,
-            done: false,
-            failed: false,
-            id: Date.now(),
-            hasTimer: timerEnabled,
-            timerStart: timerEnabled ? Date.now() : null
+    function add() {
+        const txt = document.getElementById('tIn').value; if(!txt) return;
+        store.tasks.push({ 
+            id: Date.now(), text: txt, 
+            type: document.getElementById('tType').value, 
+            level: parseInt(document.getElementById('tLvl').value), 
+            done: false, failed: false 
         });
-
-        input.value = "";
-        save();
+        document.getElementById('tIn').value = "";
+        push();
     }
 
-    // تغيير الحالة (نجاح/فشل)
-    function setStatus(index, status) {
-        const task = currentData.tasks[index];
-        
-        if (status === 'done') {
-            task.done = !task.done;
-            task.failed = false;
-        } else if (status === 'fail') {
-            task.failed = !task.failed;
-            task.done = false;
-        }
-
-        // إدارة وقت المؤقت
-        if ((task.done || task.failed) && task.hasTimer) {
-            task.timerEnd = Date.now();
-        } else {
-            task.timerEnd = null;
-        }
-        save();
+    function tog(i, a) {
+        if(a=='d') { store.tasks[i].done = !store.tasks[i].done; store.tasks[i].failed = false; }
+        push();
     }
-
-    // حذف
-    function del(index) {
-        if(confirm('حذف المهمة؟')) {
-            currentData.tasks.splice(index, 1);
-            save();
-        }
-    }
-
-    async function save() {
-        document.getElementById('status').innerText = "جاري الحفظ...";
-        try {
-            await fetch(API_URL, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(currentData)
-            });
-            load(); 
-        } catch(e) { document.getElementById('status').innerText = "فشل الحفظ"; }
-    }
-
-    function handleEnter(e) { if(e.key === 'Enter') addTask(); }
-
-    // تحديث تلقائي وتعيين اللفل الافتراضي عند البدء
-    setInterval(load, 2000);
     
-    // عند أول تشغيل، حاول جلب اللفل الحالي ووضعه في الخانة
-    fetch(API_URL).then(r=>r.json()).then(d => {
-        if(d.settings && d.settings.currentLevel) {
-            document.getElementById('lvlInput').value = d.settings.currentLevel;
-        }
-    });
-
-    load();
+    function del(i) { if(confirm('Del?')) { store.tasks.splice(i,1); push(); } }
+    
+    setInterval(load, 3000); load();
 </script>
-
 </body>
 </html>
