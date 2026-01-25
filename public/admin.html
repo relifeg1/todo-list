@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZAIRU - nPoint Control</title>
+    <title>ZAIRU - Admin Panel</title>
     <link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --accent: #ff9800; --text: #eee; --danger: #f44336; --success: #4CAF50; }
@@ -39,7 +39,7 @@
         li.failed { opacity: 0.8; border-right: 4px solid var(--danger); }
         li.failed .task-text { text-decoration: line-through; color: var(--danger); }
         
-        #statusMsg { text-align: center; color: #666; font-size: 0.9em; }
+        #statusMsg { text-align: center; color: #666; font-size: 0.9em; font-weight: bold;}
     </style>
 </head>
 <body>
@@ -100,19 +100,26 @@
             if(!dataStore.tasks) dataStore.tasks = [];
             if(!dataStore.presets) dataStore.presets = {};
             updateUI(); updateGameList(); render();
-        } catch(e) { console.error(e); document.getElementById('statusMsg').innerText = "Connection Error"; }
+            document.getElementById('statusMsg').innerText = "تم التحميل ✅";
+        } catch(e) { console.error(e); document.getElementById('statusMsg').innerText = "خطأ في الاتصال ❌"; }
     }
 
     async function syncData() {
-        document.getElementById('statusMsg').innerText = "Saving...";
+        document.getElementById('statusMsg').innerText = "⏳ جاري الحفظ...";
         try {
+            // ✅ التصحيح الجوهري: استخدام POST بدلاً من PUT
             await fetch(API_URL, {
-                method: 'PUT', // nPoint uses PUT to update
+                method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dataStore)
             });
-            document.getElementById('statusMsg').innerText = "Saved ✅";
-        } catch(e) { document.getElementById('statusMsg').innerText = "Save Failed ❌"; }
+            document.getElementById('statusMsg').innerText = "تم الحفظ بنجاح ✅";
+            document.getElementById('statusMsg').style.color = "#4CAF50";
+        } catch(e) { 
+            document.getElementById('statusMsg').innerText = "فشل الحفظ ❌"; 
+            document.getElementById('statusMsg').style.color = "#f44336";
+            console.error(e);
+        }
     }
 
     function render() {
