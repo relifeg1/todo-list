@@ -1,407 +1,221 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>HUD Overlay Ultimate</title>
-    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700;800&display=swap" rel="stylesheet">
-    <script src="https://github.com/tmijs/tmi.js/releases/download/v1.8.5/tmi.min.js"></script>
+// ✅ رابط nPoint الموحد (نفس الموجود في الأدمن)
+const API_URL = "https://api.npoint.io/9ff5d39f969a4b4840ba";
 
-    <style>
-        body { 
-            font-family: 'Changa', sans-serif; margin: 0; padding: 25px; 
-            background-color: transparent; overflow: hidden; color: white;
-            display: flex; flex-direction: column; align-items: flex-start;
-        }
+let config = { 
+    visibleDuration: 15, hiddenDuration: 300, visibilityMode: 'auto', 
+    hideLevel: false, hideXP: false, enableGlitch: true, enableParticles: true, autoLevelUp: true,
+    currentLevel: 1, twitchChannel: "", showAAR: false
+};
 
-        .hud-wrapper {
-            width: 450px;
-            border-right: 3px solid rgba(255, 255, 255, 0.15); padding-right: 20px; 
-            opacity: 0; transform: translateX(30px);
-            transition: opacity 0.5s ease, transform 0.5s ease; position: relative; z-index: 10;
-        }
-        .hud-visible { opacity: 1; transform: translateX(0); }
+let currentData = { tasks: [], settings: {} };
+let justCompletedIds = [];
+let justFailedIds = [];
+let tasksWithTimer = [];
+let activeTimer = null;
 
-        .glitch-active .hud-wrapper.hud-visible { animation: glitch-anim 0.4s cubic-bezier(.25, .46, .45, .94) both; }
-        @keyframes glitch-anim { 0% { opacity: 0; transform: translate(0); } 20% { opacity: 1; transform: translate(-5px, 5px); } 100% { opacity: 1; transform: translate(0); } }
+function startSystem() {
+    // 1. تنظيف الشاشة
+    const hud = document.querySelector('.hud-wrapper');
+    if(hud) {
+        hud.style.background = 'transparent';
+        hud.style.opacity = '1'; 
+        hud.style.transform = 'translateX(0)';
+    }
 
-        /* شريط اللفل */
-        .level-container { display: flex; align-items: center; width: 100%; margin-bottom: 20px; border-bottom: 2px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; }
-        .level-badge { background: #ff9800; color: #000; font-weight: 800; font-size: 18px; padding: 2px 10px; border-radius: 4px; margin-left: 10px; box-shadow: 0 0 10px rgba(255, 152, 0, 0.5); }
-        .progress-track { flex-grow: 1; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #ff9800, #ffeb3b); width: 0%; transition: width 0.5s ease-out; }
+    // 2. إظهار مؤشر اتصال صغير
+    const list = document.getElementById('main-list');
+    if(list) list.innerHTML = "<li style='color:#4CAF50; font-size:0.8em;'>📡 جاري المزامنة...</li>";
 
-        .section-title { font-size: 16px; margin-bottom: 8px; margin-top: 10px; opacity: 0.9; font-weight: 800; display: flex; align-items: center; }
-        .title-main { color: #ff9800; text-shadow: 0 0 15px rgba(255, 152, 0, 0.5); }
-        .title-side { color: #00bcd4; text-shadow: 0 0 15px rgba(0, 188, 212, 0.5); margin-top: 25px; }
+    // 3. البدء
+    loadData();
+    setInterval(loadData, 3000); // تحديث كل 3 ثواني
+    setInterval(updateTimers, 1000);
+}
 
-        ul { list-style: none; padding: 0; margin: 0; }
-        li { display: flex; align-items: center; margin-bottom: 6px; cursor: pointer; position: relative; transition: all 0.3s; padding: 5px; border-radius: 4px; }
-        .task-id { font-size: 0.6em; color: #aaa; margin-left: 8px; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px; font-family: sans-serif; }
-        .marker { margin-left: 8px; font-size: 14px; line-height: 0; transition: all 0.3s; }
-        .task-main { font-size: 26px; font-weight: 700; color: #fff; text-shadow: 2px 2px 0px rgba(0,0,0,0.8); line-height: 1.4; }
-        .task-side { font-size: 20px; font-weight: 500; color: #e0e0e0; padding-right: 10px; }
-        .task-main .marker { color: #ff9800; } .task-side .marker { color: #00bcd4; }
-        .timer-display { font-family: 'Courier New', monospace; font-size: 0.7em; color: #ffeb3b; background: rgba(0,0,0,0.7); padding: 2px 6px; border-radius: 3px; margin-right: 10px; }
-
-        /* حالة الانتهاء */
-        li.done { opacity: 0.5; filter: grayscale(100%); }
-        li.done span.text { text-decoration: line-through; }
-        li.done .marker { color: #4CAF50 !important; transform: scale(1.2); }
-
-        /* حالة الفشل */
-        li.failed { opacity: 0.7; border-right: 3px solid #f44336; background: rgba(244, 67, 54, 0.1); }
-        li.failed span.text { text-decoration: line-through; color: #ff6659; }
-        li.failed .marker { color: #f44336 !important; transform: rotate(180deg); }
-        li.failed::after { content: 'FAILED'; position: absolute; right: 10px; font-size: 0.8em; color: #f44336; border: 1px solid #f44336; padding: 0 4px; transform: rotate(-10deg); font-weight: bold; }
-
-        .just-finished { animation: mission-complete 1.5s ease-out forwards; }
-        @keyframes mission-complete { 0% { background: rgba(255,255,255,0.8); } 50% { background: rgba(255,215,0,0.4); } 100% { background: transparent; } }
-
-        .just-failed { animation: mission-fail 0.5s ease-in-out forwards; }
-        @keyframes mission-fail { 0% { transform: translateX(0); } 25% { transform: translateX(5px); } 50% { transform: translateX(-5px); } 75% { transform: translateX(5px); } 100% { transform: translateX(0); } }
-
-        /* --- شاشة التقرير (After Action Report) --- */
-        .aar-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 2000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.5s;
-        }
-        .aar-visible { opacity: 1; pointer-events: auto; }
-        
-        .aar-title { font-size: 3em; color: #fff; text-transform: uppercase; letter-spacing: 5px; border-bottom: 2px solid #ff9800; margin-bottom: 30px; }
-        .aar-stats { display: flex; gap: 40px; text-align: center; }
-        .stat-box { display: flex; flex-direction: column; }
-        .stat-val { font-size: 2.5em; font-weight: bold; }
-        .stat-label { font-size: 1em; color: #aaa; }
-        .val-success { color: #4CAF50; }
-        .val-fail { color: #f44336; }
-        
-        .rank-box { margin-top: 40px; font-size: 8em; font-weight: 900; line-height: 1; text-shadow: 0 0 30px; animation: rank-pop 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.5s both; }
-        .rank-S { color: #ffeb3b; text-shadow: 0 0 30px #ff9800; }
-        .rank-A { color: #4CAF50; text-shadow: 0 0 30px #00e676; }
-        .rank-B { color: #2196F3; }
-        .rank-F { color: #f44336; text-shadow: 0 0 30px #b71c1c; }
-        @keyframes rank-pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-        .level-up-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; z-index: 999; }
-        .level-up-text { font-size: 4em; color: #ffeb3b; text-shadow: 0 0 20px #ff9800; font-weight: 900; transform: scale(0.5); }
-        .level-anim-active { animation: lvl-fade 3s forwards; }
-        .level-anim-active .level-up-text { animation: lvl-pop 3s forwards; }
-        @keyframes lvl-fade { 0% { opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
-        @keyframes lvl-pop { 0% { transform: scale(0.5); } 20% { transform: scale(1.2); } 100% { transform: scale(1); } }
-    </style>
-</head>
-<body id="bodyEl">
-
-<div class="aar-screen" id="aarScreen">
-    <div class="aar-title">Mission Report</div>
-    <div class="aar-stats">
-        <div class="stat-box">
-            <span class="stat-val val-success" id="aarSuccess">0</span>
-            <span class="stat-label">COMPLETED</span>
-        </div>
-        <div class="stat-box">
-            <span class="stat-val val-fail" id="aarFail">0</span>
-            <span class="stat-label">FAILED</span>
-        </div>
-    </div>
-    <div class="rank-box" id="aarRank">?</div>
-</div>
-
-<div class="level-up-overlay" id="lvlOverlay">
-    <div class="level-up-text">LEVEL UP!</div>
-</div>
-
-<div id="hudContainer" class="hud-wrapper">
-    <div class="level-container" id="lvlContainer">
-        <div class="level-badge" id="levelDisplay">LVL 1</div>
-        <div class="progress-track" id="xpTrack">
-            <div class="progress-fill" id="xpBar"></div>
-        </div>
-    </div>
-
-    <div id="main-section" style="display:none;">
-        <div class="section-title title-main">/// أهداف رئيسية</div>
-        <ul id="main-list"></ul>
-    </div>
-
-    <div id="side-section" style="display:none;">
-        <div class="section-title title-side">/// أهداف ثانوية</div>
-        <ul id="side-list"></ul>
-    </div>
-</div>
-
-<audio id="successSound" src="success.mp3"></audio>
-<audio id="failSound" src="fail.mp3"></audio>
-<audio id="levelUpSound" src="levelup.mp3"></audio>
-<audio id="reportSound" src="report.mp3"></audio>
-
-<script>
-    const API_URL = "/api/data";
-    let config = { 
-        visibleDuration: 15, hiddenDuration: 300, visibilityMode: 'auto', 
-        hideLevel: false, hideXP: false, enableGlitch: true, enableParticles: true, autoLevelUp: true,
-        currentLevel: 1, twitchChannel: "", showAAR: false
-    };
+function loadData() {
+    var xhr = new XMLHttpRequest();
+    // ⚠️ الحيلة هنا: إضافة رقم عشوائي (?t=...) يجبر OBS على جلب بيانات جديدة
+    xhr.open("GET", API_URL + "?t=" + Date.now(), true);
     
-    let activeTimer = null;
-    let currentData = { tasks: [], settings: {} };
-    let displayMap = [];
-    let justCompletedIds = [];
-    let justFailedIds = [];
-    let tasksWithTimer = [];
-    let twitchClient = null;
-    let isTransitioning = false; 
+    xhr.onload = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var jsonResponse = JSON.parse(xhr.responseText);
+                processUpdate(jsonResponse);
+            } catch (e) { console.error("JSON Error"); }
+        }
+    };
+    xhr.send();
+}
 
-    function showHud() {
-        if(config.showAAR) return;
-        const hud = document.getElementById('hudContainer');
-        const body = document.getElementById('bodyEl');
-        if(config.enableGlitch) body.classList.add('glitch-active');
-        else body.classList.remove('glitch-active');
+function processUpdate(newData) {
+    let safeData = { tasks: [], settings: {} };
+    if (newData.tasks) safeData = newData;
+    else if (Array.isArray(newData)) safeData.tasks = newData;
+
+    if (safeData.settings) config = { ...config, ...safeData.settings };
+
+    // التحقق من شاشة التقرير AAR
+    const aarScreen = document.getElementById('aarScreen');
+    if(aarScreen && config.showAAR) {
+        if(!aarScreen.classList.contains('aar-visible')) {
+            showAAR(safeData.tasks);
+            aarScreen.classList.add('aar-visible');
+            document.getElementById('hudContainer').classList.remove('hud-visible'); 
+        }
+    } else if(aarScreen) {
+        aarScreen.classList.remove('aar-visible');
+    }
+
+    // مقارنة البيانات القديمة بالجديدة
+    const tasksChanged = JSON.stringify(safeData.tasks) !== JSON.stringify(currentData.tasks);
+    
+    // الأصوات
+    justCompletedIds = []; justFailedIds = [];
+    if (currentData.tasks.length > 0) {
+        safeData.tasks.forEach(newTask => {
+            const oldTask = currentData.tasks.find(t => t.id === newTask.id);
+            if (oldTask && !oldTask.done && newTask.done) justCompletedIds.push(newTask.id);
+            if (oldTask && !oldTask.failed && newTask.failed) justFailedIds.push(newTask.id);
+        });
+    }
+
+    // تحديث الشاشة فقط إذا تغيرت البيانات
+    if (tasksChanged || currentData.tasks.length === 0) {
+        updateDom(safeData.tasks || []);
+        if(config.visibilityMode === 'always') showHud();
+        else if (tasksChanged) showHud();
+    }
+    currentData = safeData;
+}
+
+function updateDom(allTasks) {
+    // اللفل والبار
+    const lvlDisplay = document.getElementById('levelDisplay');
+    if(lvlDisplay) {
+        lvlDisplay.innerText = "LVL " + (config.currentLevel || 1);
+        lvlDisplay.style.display = config.hideLevel ? 'none' : 'block';
+    }
+    const track = document.getElementById('xpTrack');
+    if(track) track.style.display = config.hideXP ? 'none' : 'block';
+
+    // فلترة المهام
+    const currentLvlTasks = allTasks.filter(t => (t.level || 1) == config.currentLevel);
+    
+    // حساب XP
+    let totalPoints = 0, earnedPoints = 0;
+    currentLvlTasks.forEach(t => {
+        if(t.failed) return; 
+        const points = (t.type === 'side') ? 1 : 3;
+        totalPoints += points;
+        if(t.done) earnedPoints += points;
+    });
+    const progressPercent = totalPoints === 0 ? 0 : (earnedPoints / totalPoints) * 100;
+    const xpBar = document.getElementById('xpBar');
+    if(xpBar) {
+        xpBar.style.width = `${progressPercent}%`;
+        xpBar.style.background = (progressPercent >= 100) ? "#4CAF50" : "linear-gradient(90deg, #ff9800, #ffeb3b)";
+    }
+
+    // القوائم
+    const mainList = document.getElementById('main-list');
+    const sideList = document.getElementById('side-list');
+    const mainSection = document.getElementById('main-section');
+    const sideSection = document.getElementById('side-section');
+
+    if(mainList) mainList.innerHTML = ''; 
+    if(sideList) sideList.innerHTML = ''; 
+    tasksWithTimer = [];
+    let counter = 1, hasMain = false, hasSide = false;
+
+    currentLvlTasks.forEach(task => {
+        const li = document.createElement('li');
+        li.className = task.type === 'side' ? 'task-side' : 'task-main';
+        if(task.done) li.classList.add('done');
+        if(task.failed) li.classList.add('failed');
+
+        if (justCompletedIds.includes(task.id)) {
+            li.classList.add('just-finished');
+            if(config.enableParticles) spawnParticles(li);
+            playSound('successSound');
+        }
+        if (justFailedIds.includes(task.id)) {
+            li.classList.add('just-failed');
+            playSound('failSound');
+        }
+
+        const marker = task.type === 'side' ? '◇' : '◆'; 
+        let timerHtml = task.hasTimer ? `<span id="timer-${task.id}" class="timer-display">00:00</span>` : '';
+        if(task.hasTimer) tasksWithTimer.push(task);
+
+        li.innerHTML = `<span class="task-id">[${counter++}]</span><span class="marker">${marker}</span> <span class="text">${task.text}</span>${timerHtml}`;
+
+        if (task.type === 'side') { if(sideList) sideList.appendChild(li); hasSide = true; } 
+        else { if(mainList) mainList.appendChild(li); hasMain = true; }
+    });
+
+    if(mainSection) mainSection.style.display = hasMain ? 'block' : 'none';
+    if(sideSection) sideSection.style.display = hasSide ? 'block' : 'none';
+    
+    updateTimers();
+}
+
+function showHud() {
+    const hud = document.getElementById('hudContainer');
+    if(hud) {
+        if(config.enableGlitch) document.body.classList.add('glitch-active');
+        else document.body.classList.remove('glitch-active');
         hud.classList.add('hud-visible');
-        if(config.visibilityMode === 'always') { if (activeTimer) clearTimeout(activeTimer); return; }
-        if (activeTimer) clearTimeout(activeTimer);
+    }
+    if(config.visibilityMode !== 'always') {
+        if(activeTimer) clearTimeout(activeTimer);
         activeTimer = setTimeout(hideHud, config.visibleDuration * 1000);
     }
+}
 
-    function hideHud() {
-        if(config.visibilityMode === 'always') return;
-        document.getElementById('hudContainer').classList.remove('hud-visible');
-        if (activeTimer) clearTimeout(activeTimer);
-        const currentTasks = currentData.tasks.filter(t => (t.level || 1) == config.currentLevel);
-        activeTimer = setTimeout(() => { if (currentTasks.length > 0) showHud(); }, config.hiddenDuration * 1000);
-    }
+function hideHud() {
+    if(config.visibilityMode === 'always') return;
+    const hud = document.getElementById('hudContainer');
+    if(hud) hud.classList.remove('hud-visible');
+}
 
-    function triggerManualUpdate() { showHud(); }
+function playSound(id) {
+    const audio = document.getElementById(id);
+    if(audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
+}
 
-    async function fetchData() {
-        try {
-            const res = await fetch(API_URL);
-            const rawData = await res.json();
-            let newData = { tasks: [], settings: {} };
-            if (rawData && !Array.isArray(rawData)) newData = rawData;
-            else if (Array.isArray(rawData)) newData.tasks = rawData;
-
-            if (newData.settings) {
-                if(newData.settings.twitchChannel && newData.settings.twitchChannel !== config.twitchChannel) {
-                    initTwitch(newData.settings.twitchChannel);
-                }
-                config = { ...config, ...newData.settings };
-            }
-
-            processUpdate(newData);
-        } catch(e) { console.error(e); }
-    }
-
-    function processUpdate(newData) {
-        // إدارة شاشة التقرير (AAR)
-        const aarScreen = document.getElementById('aarScreen');
-        if(config.showAAR) {
-            if(!aarScreen.classList.contains('aar-visible')) {
-                showAAR(newData.tasks);
-                aarScreen.classList.add('aar-visible');
-                document.getElementById('hudContainer').classList.remove('hud-visible'); 
-            }
-        } else {
-            aarScreen.classList.remove('aar-visible');
+function updateTimers() {
+    const now = Date.now();
+    tasksWithTimer.forEach(task => {
+        const el = document.getElementById(`timer-${task.id}`);
+        if(el) {
+            let diff = ((task.done||task.failed) ? (task.timerEnd || now) : now) - task.timerStart;
+            if(diff < 0) diff = 0;
+            const s = Math.floor((diff/1000)%60).toString().padStart(2,'0');
+            const m = Math.floor((diff/1000/60)).toString().padStart(2,'0');
+            el.innerText = `${m}:${s}`;
         }
+    });
+}
 
-        const tasksChanged = JSON.stringify(newData.tasks) !== JSON.stringify(currentData.tasks);
-        
-        justCompletedIds = [];
-        justFailedIds = [];
-        const currentTasks = newData.tasks.filter(t => (t.level || 1) == config.currentLevel);
-        
-        if (currentData.tasks.length > 0) {
-            currentTasks.forEach(newTask => {
-                const oldTask = currentData.tasks.find(t => t.id === newTask.id);
-                if (oldTask && !oldTask.done && newTask.done) justCompletedIds.push(newTask.id);
-                if (oldTask && !oldTask.failed && newTask.failed) justFailedIds.push(newTask.id);
-            });
-        }
-
-        if (tasksChanged || currentData.tasks.length === 0) {
-            updateDom(newData.tasks);
-            if(config.visibilityMode === 'always') { showHud(); } 
-            else {
-                if ((currentTasks.length > 0 && tasksChanged) || (currentData.tasks.length === 0 && currentTasks.length > 0)) {
-                    triggerManualUpdate();
-                }
-            }
-        }
-        currentData = newData;
-        checkAutoLevelUp(newData);
+function spawnParticles(element) {
+    const rect = element.getBoundingClientRect();
+    const colors = ['#ff9800', '#00bcd4', '#4CAF50', '#ffffff'];
+    for (let i = 0; i < 20; i++) {
+        const p = document.createElement('div'); p.classList.add('confetti');
+        p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        p.style.left = (rect.left + Math.random() * rect.width) + 'px';
+        p.style.top = (rect.top + rect.height / 2) + 'px';
+        document.body.appendChild(p); setTimeout(() => p.remove(), 2000);
     }
+}
 
-    function updateDom(allTasks) {
-        document.getElementById('levelDisplay').innerText = `LVL ${config.currentLevel || 1}`;
-        document.getElementById('levelDisplay').style.display = config.hideLevel ? 'none' : 'block';
-        document.getElementById('xpTrack').style.display = config.hideXP ? 'none' : 'block';
-        if(config.hideLevel && config.hideXP) document.getElementById('lvlContainer').style.display = 'none';
-        else document.getElementById('lvlContainer').style.display = 'flex';
+function showAAR(allTasks) {
+    let done=0, fail=0;
+    if(allTasks) allTasks.forEach(t => { if(t.done) done++; if(t.failed) fail++; });
+    const sEl = document.getElementById('aarSuccess'); if(sEl) sEl.innerText = done;
+    const fEl = document.getElementById('aarFail'); if(fEl) fEl.innerText = fail;
+    playSound('reportSound');
+}
 
-        const currentLvlTasks = allTasks.filter(t => (t.level || 1) == config.currentLevel);
-        
-        let totalPoints = 0; let earnedPoints = 0;
-        currentLvlTasks.forEach(t => {
-            if(t.failed) return; 
-            const points = (t.type === 'side') ? 1 : 3;
-            totalPoints += points;
-            if(t.done) earnedPoints += points;
-        });
-        const progressPercent = totalPoints === 0 ? 0 : (earnedPoints / totalPoints) * 100;
-        document.getElementById('xpBar').style.width = `${progressPercent}%`;
-        if(progressPercent >= 100 && currentLvlTasks.length > 0) document.getElementById('xpBar').style.background = "#4CAF50";
-        else document.getElementById('xpBar').style.background = "linear-gradient(90deg, #ff9800, #ffeb3b)";
-
-        const mainList = document.getElementById('main-list');
-        const sideList = document.getElementById('side-list');
-        const mainSection = document.getElementById('main-section');
-        const sideSection = document.getElementById('side-section');
-
-        mainList.innerHTML = ''; sideList.innerHTML = ''; displayMap = []; tasksWithTimer = [];
-        let counter = 1; let hasMain = false; let hasSide = false;
-
-        currentLvlTasks.forEach(task => {
-            displayMap.push(task); const taskNumber = counter++;
-            const isSide = task.type === 'side';
-            const li = document.createElement('li');
-            li.id = `task-${task.id}`; li.className = isSide ? 'task-side' : 'task-main';
-            
-            if (task.done) li.classList.add('done');
-            if (task.failed) li.classList.add('failed');
-
-            if (justCompletedIds.includes(task.id)) {
-                li.classList.add('just-finished');
-                if(config.enableParticles) spawnParticles(li);
-                const audio = document.getElementById("successSound");
-                if(audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
-            }
-
-            if (justFailedIds.includes(task.id)) {
-                li.classList.add('just-failed');
-                const audio = document.getElementById("failSound");
-                if(audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
-            }
-
-            li.onclick = () => toggleTaskStatus(task);
-            const markerChar = isSide ? '◇' : '◆'; 
-            let timerHtml = task.hasTimer ? `<span id="timer-${task.id}" class="timer-display">00:00</span>` : '';
-            if(task.hasTimer) tasksWithTimer.push(task);
-
-            li.innerHTML = `<span class="task-id">[${taskNumber}]</span><span class="marker">${markerChar}</span><span class="text">${task.text}</span>${timerHtml}`;
-
-            if (isSide) { sideList.appendChild(li); hasSide = true; } 
-            else { mainList.appendChild(li); hasMain = true; }
-        });
-
-        mainSection.style.display = hasMain ? 'block' : 'none';
-        sideSection.style.display = hasSide ? 'block' : 'none';
-        if(currentLvlTasks.length === 0) document.getElementById('hudContainer').classList.remove('hud-visible');
-        updateTimers();
-    }
-
-    function showAAR(allTasks) {
-        const audio = document.getElementById("reportSound");
-        if(audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
-        let doneCount = 0; let failCount = 0; let total = 0;
-        allTasks.forEach(t => { if(t.done) doneCount++; if(t.failed) failCount++; total++; });
-        let rank = "F";
-        const validTotal = doneCount + failCount; 
-        const percent = validTotal === 0 ? 0 : (doneCount / validTotal) * 100;
-        if (percent >= 95) rank = "S"; else if (percent >= 80) rank = "A"; else if (percent >= 60) rank = "B"; else if (percent >= 40) rank = "C"; else rank = "F";
-        document.getElementById('aarSuccess').innerText = doneCount;
-        document.getElementById('aarFail').innerText = failCount;
-        const rankEl = document.getElementById('aarRank');
-        rankEl.innerText = rank;
-        rankEl.className = `rank-box rank-${rank}`;
-    }
-
-    async function checkAutoLevelUp(data) {
-        if (!config.autoLevelUp || isTransitioning || config.showAAR) return;
-        const currentTasks = data.tasks.filter(t => (t.level || 1) == config.currentLevel);
-        if (currentTasks.length === 0) return;
-        const allFinished = currentTasks.every(t => t.done || t.failed);
-        if (allFinished) {
-            const nextLevel = (config.currentLevel || 1) + 1;
-            const nextTasks = data.tasks.filter(t => (t.level || 1) == nextLevel);
-            if (nextTasks.length > 0) {
-                isTransitioning = true;
-                setTimeout(async () => {
-                    const lvlAudio = document.getElementById("levelUpSound");
-                    if(lvlAudio) { lvlAudio.currentTime = 0; lvlAudio.play().catch(()=>{}); }
-                    const overlay = document.getElementById('lvlOverlay');
-                    overlay.classList.add('level-anim-active');
-                    setTimeout(() => overlay.classList.remove('level-anim-active'), 3000);
-                    data.settings.currentLevel = nextLevel;
-                    try { await fetch(API_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); } catch(e) { console.error(e); }
-                    setTimeout(() => { isTransitioning = false; }, 5000);
-                }, 3000);
-            }
-        }
-    }
-
-    function updateTimers() {
-        const now = Date.now();
-        tasksWithTimer.forEach(task => {
-            const el = document.getElementById(`timer-${task.id}`);
-            if(!el) return;
-            const isFinished = task.done || task.failed;
-            let diff = (isFinished ? (task.timerEnd || now) : now) - task.timerStart;
-            const seconds = Math.floor((diff / 1000) % 60);
-            const minutes = Math.floor((diff / 1000 / 60));
-            el.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        });
-    }
-
-    function spawnParticles(element) {
-        const rect = element.getBoundingClientRect();
-        const colors = ['#ff9800', '#00bcd4', '#4CAF50', '#ffffff'];
-        for (let i = 0; i < 20; i++) {
-            const p = document.createElement('div'); p.classList.add('confetti');
-            p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            p.style.left = (rect.left + Math.random() * rect.width) + 'px';
-            p.style.top = (rect.top + rect.height / 2) + 'px';
-            document.body.appendChild(p); setTimeout(() => p.remove(), 2000);
-        }
-    }
-    setInterval(updateTimers, 1000);
-
-    async function toggleTaskStatus(task) {
-        if(config.visibilityMode === 'auto') triggerManualUpdate();
-        const idx = currentData.tasks.findIndex(t => t.id === task.id);
-        if(idx > -1) {
-            currentData.tasks[idx].done = !currentData.tasks[idx].done;
-            if((currentData.tasks[idx].done || currentData.tasks[idx].failed) && currentData.tasks[idx].hasTimer) currentData.tasks[idx].timerEnd = Date.now();
-            else currentData.tasks[idx].timerEnd = null;
-        }
-        try { await fetch(API_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(currentData) }); } catch(e) { console.error(e); }
-    }
-
-    function initTwitch(channelName) {
-        if(!channelName) return;
-        if(twitchClient) twitchClient.disconnect().catch(()=>{});
-        twitchClient = new tmi.Client({ channels: [channelName] });
-        twitchClient.connect().catch(console.error);
-        twitchClient.on('message', (channel, tags, message, self) => {
-            if (self) return;
-            const msg = message.toLowerCase();
-            if (msg.startsWith('!done') || msg.startsWith('!تم')) {
-                const isMod = tags.mod || tags['user-id'] === tags['room-id'];
-                if (isMod) {
-                    const parts = msg.split(' ');
-                    if (parts.length > 1) {
-                        const num = parseInt(parts[1]);
-                        if (!isNaN(num) && num > 0 && num <= displayMap.length) toggleTaskStatus(displayMap[num - 1]);
-                    }
-                }
-            }
-        });
-    }
-    setInterval(fetchData, 2000); fetchData();
-</script>
-
-</body>
-</html>
+startSystem();
