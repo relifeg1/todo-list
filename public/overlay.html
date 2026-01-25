@@ -1,221 +1,35 @@
-// ✅ رابط nPoint الموحد (نفس الموجود في الأدمن)
-const API_URL = "https://api.npoint.io/9ff5d39f969a4b4840ba";
+<script src="https://github.com/tmijs/tmi.js/releases/download/v1.8.5/tmi.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700;800&display=swap" rel="stylesheet">
 
-let config = { 
-    visibleDuration: 15, hiddenDuration: 300, visibilityMode: 'auto', 
-    hideLevel: false, hideXP: false, enableGlitch: true, enableParticles: true, autoLevelUp: true,
-    currentLevel: 1, twitchChannel: "", showAAR: false
-};
+<div class="aar-screen" id="aarScreen">
+    <div class="aar-title">Mission Report</div>
+    <div class="aar-stats">
+        <div class="stat-box"><span class="stat-val val-success" id="aarSuccess">0</span><span class="stat-label">COMPLETED</span></div>
+        <div class="stat-box"><span class="stat-val val-fail" id="aarFail">0</span><span class="stat-label">FAILED</span></div>
+    </div>
+    <div class="rank-box" id="aarRank">?</div>
+</div>
 
-let currentData = { tasks: [], settings: {} };
-let justCompletedIds = [];
-let justFailedIds = [];
-let tasksWithTimer = [];
-let activeTimer = null;
+<div class="level-up-overlay" id="lvlOverlay"><div class="level-up-text">LEVEL UP!</div></div>
 
-function startSystem() {
-    // 1. تنظيف الشاشة
-    const hud = document.querySelector('.hud-wrapper');
-    if(hud) {
-        hud.style.background = 'transparent';
-        hud.style.opacity = '1'; 
-        hud.style.transform = 'translateX(0)';
-    }
+<div id="hudContainer" class="hud-wrapper">
+    <div class="level-container" id="lvlContainer">
+        <div class="level-badge" id="levelDisplay">LVL 1</div>
+        <div class="progress-track" id="xpTrack"><div class="progress-fill" id="xpBar"></div></div>
+    </div>
 
-    // 2. إظهار مؤشر اتصال صغير
-    const list = document.getElementById('main-list');
-    if(list) list.innerHTML = "<li style='color:#4CAF50; font-size:0.8em;'>📡 جاري المزامنة...</li>";
+    <div id="main-section" style="display:none;">
+        <div class="section-title title-main">/// أهداف رئيسية</div>
+        <ul id="main-list"></ul>
+    </div>
 
-    // 3. البدء
-    loadData();
-    setInterval(loadData, 3000); // تحديث كل 3 ثواني
-    setInterval(updateTimers, 1000);
-}
+    <div id="side-section" style="display:none;">
+        <div class="section-title title-side">/// أهداف ثانوية</div>
+        <ul id="side-list"></ul>
+    </div>
+</div>
 
-function loadData() {
-    var xhr = new XMLHttpRequest();
-    // ⚠️ الحيلة هنا: إضافة رقم عشوائي (?t=...) يجبر OBS على جلب بيانات جديدة
-    xhr.open("GET", API_URL + "?t=" + Date.now(), true);
-    
-    xhr.onload = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            try {
-                var jsonResponse = JSON.parse(xhr.responseText);
-                processUpdate(jsonResponse);
-            } catch (e) { console.error("JSON Error"); }
-        }
-    };
-    xhr.send();
-}
-
-function processUpdate(newData) {
-    let safeData = { tasks: [], settings: {} };
-    if (newData.tasks) safeData = newData;
-    else if (Array.isArray(newData)) safeData.tasks = newData;
-
-    if (safeData.settings) config = { ...config, ...safeData.settings };
-
-    // التحقق من شاشة التقرير AAR
-    const aarScreen = document.getElementById('aarScreen');
-    if(aarScreen && config.showAAR) {
-        if(!aarScreen.classList.contains('aar-visible')) {
-            showAAR(safeData.tasks);
-            aarScreen.classList.add('aar-visible');
-            document.getElementById('hudContainer').classList.remove('hud-visible'); 
-        }
-    } else if(aarScreen) {
-        aarScreen.classList.remove('aar-visible');
-    }
-
-    // مقارنة البيانات القديمة بالجديدة
-    const tasksChanged = JSON.stringify(safeData.tasks) !== JSON.stringify(currentData.tasks);
-    
-    // الأصوات
-    justCompletedIds = []; justFailedIds = [];
-    if (currentData.tasks.length > 0) {
-        safeData.tasks.forEach(newTask => {
-            const oldTask = currentData.tasks.find(t => t.id === newTask.id);
-            if (oldTask && !oldTask.done && newTask.done) justCompletedIds.push(newTask.id);
-            if (oldTask && !oldTask.failed && newTask.failed) justFailedIds.push(newTask.id);
-        });
-    }
-
-    // تحديث الشاشة فقط إذا تغيرت البيانات
-    if (tasksChanged || currentData.tasks.length === 0) {
-        updateDom(safeData.tasks || []);
-        if(config.visibilityMode === 'always') showHud();
-        else if (tasksChanged) showHud();
-    }
-    currentData = safeData;
-}
-
-function updateDom(allTasks) {
-    // اللفل والبار
-    const lvlDisplay = document.getElementById('levelDisplay');
-    if(lvlDisplay) {
-        lvlDisplay.innerText = "LVL " + (config.currentLevel || 1);
-        lvlDisplay.style.display = config.hideLevel ? 'none' : 'block';
-    }
-    const track = document.getElementById('xpTrack');
-    if(track) track.style.display = config.hideXP ? 'none' : 'block';
-
-    // فلترة المهام
-    const currentLvlTasks = allTasks.filter(t => (t.level || 1) == config.currentLevel);
-    
-    // حساب XP
-    let totalPoints = 0, earnedPoints = 0;
-    currentLvlTasks.forEach(t => {
-        if(t.failed) return; 
-        const points = (t.type === 'side') ? 1 : 3;
-        totalPoints += points;
-        if(t.done) earnedPoints += points;
-    });
-    const progressPercent = totalPoints === 0 ? 0 : (earnedPoints / totalPoints) * 100;
-    const xpBar = document.getElementById('xpBar');
-    if(xpBar) {
-        xpBar.style.width = `${progressPercent}%`;
-        xpBar.style.background = (progressPercent >= 100) ? "#4CAF50" : "linear-gradient(90deg, #ff9800, #ffeb3b)";
-    }
-
-    // القوائم
-    const mainList = document.getElementById('main-list');
-    const sideList = document.getElementById('side-list');
-    const mainSection = document.getElementById('main-section');
-    const sideSection = document.getElementById('side-section');
-
-    if(mainList) mainList.innerHTML = ''; 
-    if(sideList) sideList.innerHTML = ''; 
-    tasksWithTimer = [];
-    let counter = 1, hasMain = false, hasSide = false;
-
-    currentLvlTasks.forEach(task => {
-        const li = document.createElement('li');
-        li.className = task.type === 'side' ? 'task-side' : 'task-main';
-        if(task.done) li.classList.add('done');
-        if(task.failed) li.classList.add('failed');
-
-        if (justCompletedIds.includes(task.id)) {
-            li.classList.add('just-finished');
-            if(config.enableParticles) spawnParticles(li);
-            playSound('successSound');
-        }
-        if (justFailedIds.includes(task.id)) {
-            li.classList.add('just-failed');
-            playSound('failSound');
-        }
-
-        const marker = task.type === 'side' ? '◇' : '◆'; 
-        let timerHtml = task.hasTimer ? `<span id="timer-${task.id}" class="timer-display">00:00</span>` : '';
-        if(task.hasTimer) tasksWithTimer.push(task);
-
-        li.innerHTML = `<span class="task-id">[${counter++}]</span><span class="marker">${marker}</span> <span class="text">${task.text}</span>${timerHtml}`;
-
-        if (task.type === 'side') { if(sideList) sideList.appendChild(li); hasSide = true; } 
-        else { if(mainList) mainList.appendChild(li); hasMain = true; }
-    });
-
-    if(mainSection) mainSection.style.display = hasMain ? 'block' : 'none';
-    if(sideSection) sideSection.style.display = hasSide ? 'block' : 'none';
-    
-    updateTimers();
-}
-
-function showHud() {
-    const hud = document.getElementById('hudContainer');
-    if(hud) {
-        if(config.enableGlitch) document.body.classList.add('glitch-active');
-        else document.body.classList.remove('glitch-active');
-        hud.classList.add('hud-visible');
-    }
-    if(config.visibilityMode !== 'always') {
-        if(activeTimer) clearTimeout(activeTimer);
-        activeTimer = setTimeout(hideHud, config.visibleDuration * 1000);
-    }
-}
-
-function hideHud() {
-    if(config.visibilityMode === 'always') return;
-    const hud = document.getElementById('hudContainer');
-    if(hud) hud.classList.remove('hud-visible');
-}
-
-function playSound(id) {
-    const audio = document.getElementById(id);
-    if(audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
-}
-
-function updateTimers() {
-    const now = Date.now();
-    tasksWithTimer.forEach(task => {
-        const el = document.getElementById(`timer-${task.id}`);
-        if(el) {
-            let diff = ((task.done||task.failed) ? (task.timerEnd || now) : now) - task.timerStart;
-            if(diff < 0) diff = 0;
-            const s = Math.floor((diff/1000)%60).toString().padStart(2,'0');
-            const m = Math.floor((diff/1000/60)).toString().padStart(2,'0');
-            el.innerText = `${m}:${s}`;
-        }
-    });
-}
-
-function spawnParticles(element) {
-    const rect = element.getBoundingClientRect();
-    const colors = ['#ff9800', '#00bcd4', '#4CAF50', '#ffffff'];
-    for (let i = 0; i < 20; i++) {
-        const p = document.createElement('div'); p.classList.add('confetti');
-        p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        p.style.left = (rect.left + Math.random() * rect.width) + 'px';
-        p.style.top = (rect.top + rect.height / 2) + 'px';
-        document.body.appendChild(p); setTimeout(() => p.remove(), 2000);
-    }
-}
-
-function showAAR(allTasks) {
-    let done=0, fail=0;
-    if(allTasks) allTasks.forEach(t => { if(t.done) done++; if(t.failed) fail++; });
-    const sEl = document.getElementById('aarSuccess'); if(sEl) sEl.innerText = done;
-    const fEl = document.getElementById('aarFail'); if(fEl) fEl.innerText = fail;
-    playSound('reportSound');
-}
-
-startSystem();
+<audio id="successSound" src="https://todo-list-8rei.onrender.com/success.mp3"></audio>
+<audio id="failSound" src="https://todo-list-8rei.onrender.com/fail.mp3"></audio>
+<audio id="levelUpSound" src="https://todo-list-8rei.onrender.com/levelup.mp3"></audio>
+<audio id="reportSound" src="https://todo-list-8rei.onrender.com/report.mp3"></audio>
